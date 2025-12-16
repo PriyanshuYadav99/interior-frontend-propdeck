@@ -253,15 +253,15 @@ const App = () => {
   };
 
   return (
-    <div style={{ minHeight: '100vh', background: 'linear-gradient(135deg, #f5f3ff 0%, #ffffff 50%, #eff6ff 100%)', padding: '1rem' }}>
-      <div className="app-container" style={{ maxWidth: '1600px', margin: '0 auto', display: 'grid', gap: '1rem' }}>
+    <div style={{ minHeight: '100vh', background: 'linear-gradient(135deg, #f5f3ff 0%, #ffffff 50%, #eff6ff 100%)', padding: '0.5rem' }}>
+      <div className="app-container" style={{ maxWidth: '1280px', margin: '0 auto', display: 'grid', gap: '0.75rem' }}>
         {/* Left Panel */}
-        <div className="left-panel" style={{ background: 'white', borderRadius: '1rem', boxShadow: '0 10px 25px rgba(0,0,0,0.1)', padding: '1.5rem', display: 'flex', flexDirection: 'column' }}>
-          <div style={{ flex: 1, overflowY: 'auto', paddingRight: '0.5rem' }}>
-            <div style={{ marginBottom: '1.25rem' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem' }}>
-                <Home size={18} color="#374151" />
-                <h2 style={{ fontSize: '1.125rem', fontWeight: '600', color: '#111827', margin: 0 }}>Select Room</h2>
+        <div className="left-panel" style={{ background: 'white', borderRadius: '0.75rem', boxShadow: '0 8px 20px rgba(0,0,0,0.08)', padding: '1rem', display: 'flex', flexDirection: 'column' }}>
+          <div style={{ flex: 1, overflowY: 'auto', paddingRight: '0.25rem' }}>
+            <div style={{ marginBottom: '0.75rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', marginBottom: '0.625rem' }}>
+                <Home size={16} color="#374151" />
+                <h2 style={{ fontSize: '0.95rem', fontWeight: '600', color: '#111827', margin: 0 }}>Select Room</h2>
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
                 {rooms.map((room) => {
@@ -271,19 +271,19 @@ const App = () => {
                       key={room.id}
                       onClick={() => setSelectedRoom(room.id)}
                       style={{
-                        padding: '0.625rem',
-                        borderRadius: '0.5rem',
+                        padding: '0.625rem 0.5rem',
+                        borderRadius: '0.4rem',
                         border: selectedRoom === room.id ? '2px solid #9333ea' : '2px solid #e5e7eb',
                         background: selectedRoom === room.id ? '#faf5ff' : 'white',
-                        boxShadow: selectedRoom === room.id ? '0 4px 6px rgba(147,51,234,0.1)' : 'none',
+                        boxShadow: selectedRoom === room.id ? '0 3px 5px rgba(147,51,234,0.1)' : 'none',
                         cursor: 'pointer',
                         display: 'flex',
                         alignItems: 'center',
-                        gap: '0.5rem',
+                        gap: '0.4rem',
                         transition: 'all 0.2s'
                       }}
                     >
-                      <Icon size={16} />
+                      <Icon size={14} />
                       <span style={{ fontWeight: '500', fontSize: '0.8rem' }}>{room.name}</span>
                     </button>
                   );
@@ -291,12 +291,12 @@ const App = () => {
               </div>
             </div>
 
-            <div style={{ marginBottom: '1.25rem' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem' }}>
-                <Sparkles size={18} color="#374151" />
-                <h2 style={{ fontSize: '1.125rem', fontWeight: '600', color: '#111827', margin: 0 }}>Choose Style</h2>
+            <div style={{ marginBottom: '0.75rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', marginBottom: '0.625rem' }}>
+                <Sparkles size={16} color="#374151" />
+                <h2 style={{ fontSize: '0.95rem', fontWeight: '600', color: '#111827', margin: 0 }}>Choose Style</h2>
               </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.5rem', marginBottom: '0.75rem' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.45rem', marginBottom: '0.625rem' }}>
                 {styles.map((style) => (
                   <button
                     key={style.id}
@@ -305,21 +305,21 @@ const App = () => {
                       setCustomPrompt('');
                     }}
                     style={{
-                      padding: '0.5rem',
-                      borderRadius: '0.5rem',
+                      padding: '0.5rem 0.375rem',
+                      borderRadius: '0.4rem',
                       border: selectedStyle === style.id ? '2px solid #9333ea' : '2px solid #e5e7eb',
                       background: selectedStyle === style.id ? '#faf5ff' : 'white',
-                      boxShadow: selectedStyle === style.id ? '0 4px 6px rgba(147,51,234,0.1)' : 'none',
+                      boxShadow: selectedStyle === style.id ? '0 3px 5px rgba(147,51,234,0.1)' : 'none',
                       cursor: 'pointer',
                       transition: 'all 0.2s'
                     }}
                   >
-                    <span style={{ fontWeight: '500', fontSize: '0.8rem' }}>{style.name}</span>
+                    <span style={{ fontWeight: '500', fontSize: '0.75rem' }}>{style.name}</span>
                   </button>
                 ))}
               </div>
 
-              <div style={{ textAlign: 'center', color: '#9ca3af', fontWeight: '500', margin: '0.5rem 0', fontSize: '0.75rem' }}>OR</div>
+              <div style={{ textAlign: 'center', color: '#9ca3af', fontWeight: '500', margin: '0.5rem 0', fontSize: '0.7rem' }}>OR</div>
 
               <textarea
                 value={customPrompt}
@@ -327,15 +327,15 @@ const App = () => {
                   setCustomPrompt(e.target.value);
                   if (e.target.value.trim()) setSelectedStyle('');
                 }}
-                placeholder="Describe your style (e.g., Space theme kids room, Tropical paradise...)"
+                placeholder="Describe your style (e.g., Space theme kids room...)"
                 style={{
                   width: '100%',
-                  padding: '0.75rem',
+                  padding: '0.625rem',
                   border: '2px solid #e5e7eb',
-                  borderRadius: '0.5rem',
+                  borderRadius: '0.4rem',
                   resize: 'none',
-                  height: '4rem',
-                  fontSize: '0.8rem',
+                  height: '2.75rem',
+                  fontSize: '0.75rem',
                   outline: 'none',
                   transition: 'border 0.2s'
                 }}
@@ -351,55 +351,55 @@ const App = () => {
                 width: '100%',
                 background: isGenerating || apiStatus === 'disconnected' ? '#d1d5db' : '#256D11',
                 color: 'white',
-                padding: '0.875rem',
-                borderRadius: '0.5rem',
+                padding: '0.75rem',
+                borderRadius: '0.4rem',
                 fontWeight: '600',
-                fontSize: '1rem',
+                fontSize: '0.875rem',
                 border: 'none',
                 cursor: isGenerating || apiStatus === 'disconnected' ? 'not-allowed' : 'pointer',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                gap: '0.5rem',
-                boxShadow: '0 10px 15px rgba(37,109,17,0.3)',
+                gap: '0.4rem',
+                boxShadow: '0 8px 12px rgba(37,109,17,0.25)',
                 transition: 'all 0.2s',
-                marginBottom: '1rem'
+                marginBottom: '0.5rem'
               }}
             >
               {isGenerating ? (
                 <>
-                  <Loader2 size={18} style={{ animation: 'spin 1s linear infinite' }} />
+                  <Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} />
                   Generating...
                 </>
               ) : (
                 <>
-                  <Sparkles size={18} />
+                  <Sparkles size={16} />
                   Generate Design
                 </>
               )}
             </button>
 
-            <div style={{ textAlign: 'center', marginTop: '1.5rem', marginBottom: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
-              <span style={{ fontSize: '1.2rem', color: '#6b7280', fontWeight: '600', fontStyle: 'italic' }}>
+            <div style={{ textAlign: 'center', marginTop: '0.5rem', marginBottom: '0.375rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.375rem' }}>
+              <span style={{ fontSize: '0.875rem', color: '#6b7280', fontWeight: '600', fontStyle: 'italic' }}>
                 Powered by
               </span>
               <img 
                 src="/logo.png"
                 alt="PropDeck Logo" 
-                style={{ height: '24px', width: 'auto' }}
+                style={{ height: '18px', width: 'auto' }}
               />
             </div>
 
             {success && (
-              <div style={{ marginBottom: '0.75rem', padding: '0.625rem', background: '#ecfdf5', border: '1px solid #10b981', borderRadius: '0.5rem', color: '#047857', fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <CheckCircle size={14} />
+              <div style={{ marginBottom: '0.5rem', padding: '0.5rem', background: '#ecfdf5', border: '1px solid #10b981', borderRadius: '0.4rem', color: '#047857', fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
+                <CheckCircle size={12} />
                 {success}
               </div>
             )}
 
             {error && (
-              <div style={{ marginBottom: '0.75rem', padding: '0.625rem', background: '#fef2f2', border: '1px solid #ef4444', borderRadius: '0.5rem', color: '#dc2626', fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <AlertCircle size={14} />
+              <div style={{ marginBottom: '0.5rem', padding: '0.5rem', background: '#fef2f2', border: '1px solid #ef4444', borderRadius: '0.4rem', color: '#dc2626', fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
+                <AlertCircle size={12} />
                 {error}
               </div>
             )}
@@ -407,34 +407,34 @@ const App = () => {
         </div>
 
         {/* Right Panel */}
-        <div className="right-panel" style={{ background: 'white', borderRadius: '1rem', boxShadow: '0 10px 25px rgba(0,0,0,0.1)', padding: '1.5rem', display: 'flex', flexDirection: 'column' }}>
-          <h2 style={{ fontSize: '1.25rem', fontWeight: '600', color: '#111827', marginBottom: '1rem', margin: '0 0 1rem 0' }}>Generated Designs</h2>
+        <div className="right-panel" style={{ background: 'white', borderRadius: '0.75rem', boxShadow: '0 8px 20px rgba(0,0,0,0.08)', padding: '1rem', display: 'flex', flexDirection: 'column' }}>
+          <h2 style={{ fontSize: '1.1rem', fontWeight: '600', color: '#111827', marginBottom: '0.75rem', margin: '0 0 0.75rem 0' }}>Generated Designs</h2>
           
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
             {imageHistory.length === 0 ? (
-              <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f9fafb', borderRadius: '0.75rem', border: '2px dashed #d1d5db' }}>
-                <div style={{ textAlign: 'center', padding: '2rem' }}>
-                  <Sparkles size={48} color="#d1d5db" style={{ margin: '0 auto 1rem' }} />
-                  <p style={{ color: '#9ca3af', fontSize: '1rem', marginBottom: '0.5rem' }}>
+              <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f9fafb', borderRadius: '0.5rem', border: '2px dashed #d1d5db' }}>
+                <div style={{ textAlign: 'center', padding: '1.5rem' }}>
+                  <Sparkles size={40} color="#d1d5db" style={{ margin: '0 auto 0.75rem' }} />
+                  <p style={{ color: '#9ca3af', fontSize: '0.95rem', marginBottom: '0.375rem', fontWeight: '500' }}>
                     Your AI-generated designs will appear here
                   </p>
-                  <p style={{ color: '#d1d5db', fontSize: '0.8rem' }}>
+                  <p style={{ color: '#d1d5db', fontSize: '0.75rem' }}>
                     Select a room and style, then click Generate Design
                   </p>
                 </div>
               </div>
             ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', height: '100%' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.875rem', height: '100%' }}>
                 {imageHistory.length > 0 && (
                   <div style={{ flexShrink: 0 }}>
-                    <p style={{ fontSize: '0.75rem', color: '#6b7280', marginBottom: '0.5rem', fontWeight: '500' }}>
+                    <p style={{ fontSize: '0.75rem', color: '#6b7280', marginBottom: '0.5rem', fontWeight: '600' }}>
                       Previous Designs ({imageHistory.length})
                     </p>
                     <div style={{ 
                       display: 'flex', 
                       gap: '0.5rem', 
                       overflowX: 'auto', 
-                      paddingBottom: '0.5rem'
+                      paddingBottom: '0.375rem'
                     }}>
                       {imageHistory.slice(0, 5).map((img, idx) => (
                         <button
@@ -443,19 +443,19 @@ const App = () => {
                             setSelectedImageIndex(idx);
                           }}
                           style={{
-                            minWidth: '60px',
-                            height: '60px',
+                            minWidth: '55px',
+                            height: '55px',
                             border: selectedImageIndex === idx
-                              ? '3px solid #9333ea' 
+                              ? '2.5px solid #9333ea' 
                               : '2px solid #e5e7eb',
-                            borderRadius: '0.5rem',
+                            borderRadius: '0.4rem',
                             overflow: 'hidden',
                             cursor: 'pointer',
                             padding: 0,
                             background: 'none',
                             transition: 'all 0.2s',
                             boxShadow: selectedImageIndex === idx
-                              ? '0 4px 6px rgba(147,51,234,0.3)'
+                              ? '0 3px 5px rgba(147,51,234,0.25)'
                               : 'none'
                           }}
                         >
@@ -483,9 +483,9 @@ const App = () => {
                       position: 'relative', 
                       width: '100%',
                       flex: 1,
-                      borderRadius: '0.75rem', 
+                      borderRadius: '0.5rem', 
                       overflow: 'hidden',
-                      boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
+                      boxShadow: '0 3px 5px rgba(0,0,0,0.08)',
                       background: '#f9fafb',
                       display: 'flex',
                       alignItems: 'center',
@@ -504,7 +504,7 @@ const App = () => {
                     </div>
                     
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0 }}>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.125rem' }}>
                         <span style={{ fontSize: '0.875rem', color: '#111827', fontWeight: '600', textTransform: 'capitalize' }}>
                           {image.roomType.replace('_', ' ')}
                         </span>
@@ -527,9 +527,9 @@ const App = () => {
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
-                            boxShadow: '0 2px 4px rgba(0,0,0,0.05)',
-                            width: '45px',
-                            height: '45px',
+                            boxShadow: '0 2px 3px rgba(0,0,0,0.05)',
+                            width: '40px',
+                            height: '40px',
                             transition: 'all 0.2s'
                           }}
                           onMouseEnter={(e) => {
@@ -544,7 +544,7 @@ const App = () => {
                           }}
                           title="Download"
                         >
-                          <Download size={18} />
+                          <Download size={16} />
                         </button>
                       </div>
                     </div>
@@ -582,11 +582,11 @@ const App = () => {
         }
         ::-webkit-scrollbar-track {
           background: #f1f1f1;
-          border-radius: 10px;
+          border-radius: 8px;
         }
         ::-webkit-scrollbar-thumb {
           background: #9333ea;
-          border-radius: 10px;
+          border-radius: 8px;
         }
         ::-webkit-scrollbar-thumb:hover {
           background: #7c3aed;
@@ -598,14 +598,27 @@ const App = () => {
         }
         
         .left-panel, .right-panel {
-          height: calc(100vh - 2rem);
+          height: 520px;
           overflow-y: auto;
+        }
+        
+        /* Large desktops - keep compact */
+        @media (min-width: 1440px) {
+          .app-container {
+            max-width: 1280px !important;
+          }
         }
         
         /* Tablets and smaller desktops */
         @media (max-width: 1199px) {
           .app-container {
             grid-template-columns: 1fr 1fr;
+            gap: 0.875rem;
+          }
+          
+          .left-panel, .right-panel {
+            padding: 1rem;
+            height: 480px;
           }
         }
         
@@ -613,18 +626,24 @@ const App = () => {
         @media (max-width: 767px) {
           .app-container {
             grid-template-columns: 1fr;
+            gap: 0.75rem;
           }
           
           .left-panel, .right-panel {
             height: auto;
             max-height: none;
+            padding: 1rem;
           }
         }
         
         /* Very small screens */
         @media (max-width: 480px) {
           body {
-            font-size: 14px;
+            font-size: 13px;
+          }
+          
+          .left-panel, .right-panel {
+            padding: 0.875rem;
           }
         }
       `}</style>
