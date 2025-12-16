@@ -1,5 +1,3 @@
-
-
 import React, { useState, useEffect } from 'react';
 import { Sparkles, Download, Home, Bed, Briefcase, UtensilsCrossed, Loader2, AlertCircle, CheckCircle, Share2, Sofa } from 'lucide-react';
 import { generateDesign, checkHealth, checkSession, incrementGeneration } from './api';
@@ -30,11 +28,8 @@ const App = () => {
 
   const rooms = [
     { id: 'master_bedroom', name: 'Master Bedroom', icon: Bed },
-    // { id: 'bedroom_1', name: 'Bedroom 1', icon: Bed },
-    // { id: 'bedroom_2', name: 'Bedroom 2', icon: Bed },
     { id: 'living_room', name: 'Living Room', icon: Sofa },
     { id: 'kitchen', name: 'Kitchen', icon: Briefcase },
-    // { id: 'dining_room', name: 'Dining Room', icon: UtensilsCrossed }
   ];
 
   const styles = [
@@ -155,7 +150,6 @@ const App = () => {
       console.log('[APP] 🎉 Generation completed!');
       setProgress(80);
       
-      // ✅ FIXED: Use Cloudinary URL if available, fallback to base64
       const processedImages = [{
         id: result.images[0].id || Date.now(),
         url: result.images[0].image_url || result.images[0].cloudinary_url || `data:image/png;base64,${result.images[0].image_base64}`,
@@ -168,7 +162,6 @@ const App = () => {
       const newHistory = [...processedImages, ...imageHistory];
       setImageHistory(newHistory);
       
-      // ✅ FIXED: Save only URLs to sessionStorage (lightweight)
       try {
         const lightweightHistory = newHistory.slice(0, 20).map(img => ({
           id: img.id,
@@ -231,11 +224,9 @@ const App = () => {
     console.log('[APP] User registered and modal closed');
   };
 
-  // ✅ FIXED: Download function to handle both URLs and base64
   const downloadImage = async (image, index) => {
     try {
       if (image.url.startsWith('http')) {
-        // Download from URL
         const response = await fetch(image.url);
         const blob = await response.blob();
         const blobUrl = URL.createObjectURL(blob);
@@ -248,7 +239,6 @@ const App = () => {
         document.body.removeChild(link);
         URL.revokeObjectURL(blobUrl);
       } else {
-        // Download base64 directly
         const link = document.createElement('a');
         link.href = image.url;
         link.download = `design-${image.roomType}-${image.style}-${index + 1}.png`;
@@ -262,42 +252,11 @@ const App = () => {
     }
   };
 
-  // const shareImage = async (imageUrl) => {
-  //   try {
-  //     if (navigator.share) {
-  //       const response = await fetch(imageUrl);
-  //       const blob = await response.blob();
-  //       const file = new File([blob], 'design.png', { type: 'image/png' });
-        
-  //       await navigator.share({
-  //         title: 'AI Interior Design',
-  //         text: 'Check out this amazing interior design!',
-  //         files: [file]
-  //       });
-  //       setSuccess('✓ Shared successfully!');
-  //     } else {
-  //       await navigator.clipboard.writeText(window.location.href);
-  //       setSuccess('✓ Link copied to clipboard!');
-  //     }
-  //   } catch (error) {
-  //     if (error.name !== 'AbortError') {
-  //       console.error('Share error:', error);
-  //       setError('Failed to share. Please try again.');
-  //     }
-  //   }
-  // };
-
   return (
-    <div style={{ height: '100vh', background: 'linear-gradient(135deg, #f5f3ff 0%, #ffffff 50%, #eff6ff 100%)', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-      {/* <div style={{ textAlign: 'center', padding: '1rem 2rem 0.5rem' }}>
-        <h1 style={{ fontSize: '1.75rem', fontWeight: 'bold', color: '#111827', marginBottom: '0.25rem', margin: 0 }}>
-          Reimagine Your Property with AI
-        </h1>
-      </div> */}
-
-      <div style={{ flex: 1, maxWidth: '1400px', width: '100%', margin: '0 auto', padding: '0.5rem 2rem 1rem', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', overflow: 'hidden' }}>
+    <div style={{ minHeight: '100vh', background: 'linear-gradient(135deg, #f5f3ff 0%, #ffffff 50%, #eff6ff 100%)', padding: '1rem' }}>
+      <div className="app-container" style={{ maxWidth: '1600px', margin: '0 auto', display: 'grid', gap: '1rem' }}>
         {/* Left Panel */}
-        <div style={{ background: 'white', borderRadius: '1rem', boxShadow: '0 10px 25px rgba(0,0,0,0.1)', padding: '1.5rem', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+        <div className="left-panel" style={{ background: 'white', borderRadius: '1rem', boxShadow: '0 10px 25px rgba(0,0,0,0.1)', padding: '1.5rem', display: 'flex', flexDirection: 'column' }}>
           <div style={{ flex: 1, overflowY: 'auto', paddingRight: '0.5rem' }}>
             <div style={{ marginBottom: '1.25rem' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem' }}>
@@ -448,7 +407,7 @@ const App = () => {
         </div>
 
         {/* Right Panel */}
-        <div style={{ background: 'white', borderRadius: '1rem', boxShadow: '0 10px 25px rgba(0,0,0,0.1)', padding: '1.5rem', display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
+        <div className="right-panel" style={{ background: 'white', borderRadius: '1rem', boxShadow: '0 10px 25px rgba(0,0,0,0.1)', padding: '1.5rem', display: 'flex', flexDirection: 'column' }}>
           <h2 style={{ fontSize: '1.25rem', fontWeight: '600', color: '#111827', marginBottom: '1rem', margin: '0 0 1rem 0' }}>Generated Designs</h2>
           
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
@@ -632,12 +591,49 @@ const App = () => {
         ::-webkit-scrollbar-thumb:hover {
           background: #7c3aed;
         }
+        
+        /* Responsive Grid Layout */
+        .app-container {
+          grid-template-columns: 1fr 1fr;
+        }
+        
+        .left-panel, .right-panel {
+          height: calc(100vh - 2rem);
+          overflow-y: auto;
+        }
+        
+        /* Tablets and smaller desktops */
+        @media (max-width: 1199px) {
+          .app-container {
+            grid-template-columns: 1fr 1fr;
+          }
+        }
+        
+        /* Mobile and small tablets */
+        @media (max-width: 767px) {
+          .app-container {
+            grid-template-columns: 1fr;
+          }
+          
+          .left-panel, .right-panel {
+            height: auto;
+            max-height: none;
+          }
+        }
+        
+        /* Very small screens */
+        @media (max-width: 480px) {
+          body {
+            font-size: 14px;
+          }
+        }
       `}</style>
     </div>
   );
 };
 
 export default App;
+
 // import React, { useState, useEffect } from 'react';
 // import { Sparkles, Download, Home, Bed, Briefcase, UtensilsCrossed, Loader2, AlertCircle, CheckCircle, Share2, Sofa } from 'lucide-react';
 // import { generateDesign, checkHealth, checkSession, incrementGeneration } from './api';
