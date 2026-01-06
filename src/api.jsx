@@ -399,5 +399,51 @@ export const checkHealth = async () => {
     return { status: 'unhealthy' };
   }
 };
+export const generateScenario = async (scenarioText, clientName = 'skyline') => {
+  console.log('[API] generateScenario called with:', { scenarioText, clientName });
+  console.log('[API] Fetching from:', `${API_BASE_URL}/api/scenario/generate`);
+  
+  const response = await fetch(`${API_BASE_URL}/api/scenario/generate`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      scenario_text: scenarioText,
+      client_name: clientName
+    }),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    console.error('[API] Scenario generation failed:', errorData);
+    throw new Error(errorData.error || 'Scenario generation failed');
+  }
+
+  const result = await response.json();
+  console.log('[API] Scenario generation response:', result);
+  return result;
+};
+
+export const getPreGeneratedScenarios = async () => {
+  console.log('[API] getPreGeneratedScenarios called');
+  console.log('[API] Fetching from:', `${API_BASE_URL}/api/scenario/pre-generated`);
+  
+  const response = await fetch(`${API_BASE_URL}/api/scenario/pre-generated`, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  });
+
+  if (!response.ok) {
+    console.error('[API] Failed to fetch scenarios:', response.status);
+    throw new Error('Failed to fetch pre-generated scenarios');
+  }
+
+  const result = await response.json();
+  console.log('[API] Pre-generated scenarios response:', result);
+  return result;
+};
 
 export default api;
