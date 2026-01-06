@@ -367,28 +367,7 @@
 // export default ScenarioSimulator;
 import React, { useState, useEffect } from 'react';
 import { ChevronLeft, Sparkles, X, Loader2, AlertCircle } from 'lucide-react';
-
-// API Configuration
-const API_BASE_URL = 'https://interior-backend-production.up.railway.app';
-
-const generateScenario = async (scenarioText, clientName = 'skyline') => {
-  const response = await fetch(`${API_BASE_URL}/api/scenario/generate`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      scenario_text: scenarioText,
-      client_name: clientName
-    }),
-  });
-  if (!response.ok) throw new Error('Generation failed');
-  return await response.json();
-};
-
-const getPreGeneratedScenarios = async () => {
-  const response = await fetch(`${API_BASE_URL}/api/scenario/pre-generated`);
-  if (!response.ok) throw new Error('Failed to fetch scenarios');
-  return await response.json();
-};
+import { generateScenario, getPreGeneratedScenarios } from './api';
 
 const ScenarioSimulator = ({ onBack }) => {
   const [scenarioText, setScenarioText] = useState('');
@@ -473,26 +452,26 @@ const ScenarioSimulator = ({ onBack }) => {
     }
   };
 
-// ✅ Helper function with retry logic for rate limits
-const generateScenarioWithRetry = async (scenarioText, maxRetries = 3) => {
-  for (let attempt = 1; attempt <= maxRetries; attempt++) {
-    try {
-      const result = await generateScenario(scenarioText);
-      return result;
-    } catch (error) {
-      console.warn(`[RETRY] Attempt ${attempt}/${maxRetries} failed:`, error.message);
-      
-      if (attempt < maxRetries) {
-        // Wait before retrying (exponential backoff)
-        const delay = attempt * 2000; // 2s, 4s, 6s
-        console.log(`[RETRY] Waiting ${delay/1000}s before retry...`);
-        await new Promise(resolve => setTimeout(resolve, delay));
-      } else {
-        throw error; // Final attempt failed
+  // ✅ Helper function with retry logic for rate limits
+  const generateScenarioWithRetry = async (scenarioText, maxRetries = 3) => {
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        const result = await generateScenario(scenarioText);
+        return result;
+      } catch (error) {
+        console.warn(`[RETRY] Attempt ${attempt}/${maxRetries} failed:`, error.message);
+        
+        if (attempt < maxRetries) {
+          // Wait before retrying (exponential backoff)
+          const delay = attempt * 2000; // 2s, 4s, 6s
+          console.log(`[RETRY] Waiting ${delay/1000}s before retry...`);
+          await new Promise(resolve => setTimeout(resolve, delay));
+        } else {
+          throw error; // Final attempt failed
+        }
       }
     }
-  }
-};
+  };
 
   // ✅ FLOW 2: Generate 5 NEW random scenarios (PARALLEL with retry)
   const handleGenerateMoreScenarios = async () => {
