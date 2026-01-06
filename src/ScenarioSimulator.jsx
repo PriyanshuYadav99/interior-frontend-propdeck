@@ -369,7 +369,7 @@ import React, { useState, useEffect } from 'react';
 import { ChevronLeft, Sparkles, X, Loader2, AlertCircle } from 'lucide-react';
 
 // API Configuration
-const API_BASE_URL = 'http://127.0.0.1:5000';
+const API_BASE_URL = 'https://interior-backend-production.up.railway.app';
 
 const generateScenario = async (scenarioText, clientName = 'skyline') => {
   const response = await fetch(`${API_BASE_URL}/api/scenario/generate`, {
