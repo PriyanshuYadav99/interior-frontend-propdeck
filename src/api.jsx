@@ -201,7 +201,7 @@
 import axios from 'axios';
 
 // ✅ Railway URL
-const API_BASE_URL = 'https://interior-backend-production.up.railway.app';
+const API_BASE_URL = 'http://127.0.0.1:5000';
 
 console.log('[API] Base URL:', API_BASE_URL);
 
@@ -422,6 +422,28 @@ export const generateScenario = async (scenarioText, clientName = 'skyline') => 
 
   const result = await response.json();
   console.log('[API] Scenario generation response:', result);
+  return result;
+};
+// Add this to your api.jsx file
+
+export const getRandomScenarios = async () => {
+  console.log('[API] getRandomScenarios called');
+  console.log('[API] Fetching from:', `${API_BASE_URL}/api/scenario/random`);
+  
+  const response = await fetch(`${API_BASE_URL}/api/scenario/random`, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  });
+
+  if (!response.ok) {
+    console.error('[API] Failed to fetch random scenarios:', response.status);
+    throw new Error('Failed to fetch random scenarios');
+  }
+
+  const result = await response.json();
+  console.log('[API] Random scenarios response:', result);
   return result;
 };
 
