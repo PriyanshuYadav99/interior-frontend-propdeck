@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { ChevronLeft, MapPin, Navigation, Star, Search, Loader2, AlertCircle } from 'lucide-react';
 
@@ -9,7 +8,6 @@ const categories = [
   { id: 'nature', label: 'Nature', icon: 'Trees' },
   { id: 'health', label: 'Health', icon: 'Cross' },
   { id: 'transport', label: 'Transport', icon: 'Bus' },
-  // ✅ FIXED: Changed 'Transport' to 'transit'
   { id: 'shop', label: 'Shop', icon: 'ShoppingCart' },
   { id: 'gym', label: 'Gym', icon: 'Dumbbell' }
 ];
@@ -41,10 +39,6 @@ const BACKEND_URL = 'https://interior-backend-production.up.railway.app';
 const GOOGLE_MAPS_API_KEY = 'AIzaSyAfDoI98BjfukXxFsnXB8qQJPK_0Bi7ntI';
 
 // ✅ APARTMENT CONFIGURATION - Edit these coordinates for your apartment
-// HOW TO GET COORDINATES:
-// Method 1: Google Maps → Search address → Right-click location → Click coordinates
-// Method 2: Google Maps URL after searching (numbers like: @26.4499,80.3319)
-// Method 3: Visit https://www.google.com/maps, search, right-click, copy coordinates
 const APARTMENT_COORDINATES = {
   lat: 25.0694755,  // VERDE BY SOBHA, Dubai
   lng: 55.1468862,  // VERDE BY SOBHA, Dubai
@@ -58,10 +52,6 @@ const SEARCH_RADIUS = 5000;
 // API HELPER FUNCTIONS
 // ============================================================
 
-/**
- * Search for nearby places using Flask backend
- * Always uses APARTMENT_COORDINATES as origin
- */
 const searchVirtualTour = async (location, category, radius = SEARCH_RADIUS, isCustomSearch = false) => {
   try {
     console.log('[API] Search mode:', isCustomSearch ? 'CUSTOM' : 'CATEGORY');
@@ -95,9 +85,6 @@ const searchVirtualTour = async (location, category, radius = SEARCH_RADIUS, isC
   }
 };
 
-/**
- * Get directions between two points
- */
 const getDirections = async (origin, destination, mode = 'driving') => {
   try {
     const response = await fetch(`${BACKEND_URL}/api/virtual-tour/directions`, {
@@ -123,9 +110,6 @@ const getDirections = async (origin, destination, mode = 'driving') => {
   }
 };
 
-/**
- * Get place details
- */
 const getPlaceDetails = async (placeId) => {
   try {
     const response = await fetch(`${BACKEND_URL}/api/virtual-tour/place-details/${placeId}`);
@@ -159,6 +143,7 @@ const VirtualTour = ({ onBack }) => {
   const [showStreetView, setShowStreetView] = useState(false);
   const [streetViewPlace, setStreetViewPlace] = useState(null);
   const [isCustomSearch, setIsCustomSearch] = useState(false);
+  
   // Map references
   const mapRef = useRef(null);
   const googleMapRef = useRef(null);
@@ -180,7 +165,7 @@ const VirtualTour = ({ onBack }) => {
     }
   }, []);
 
-  // ✅ FIX FOR ISSUE #1: AUTO-LOAD apartment location and dining places on mount
+  // ✅ AUTO-LOAD apartment location and dining places on mount
   useEffect(() => {
     if (mapLoaded) {
       console.log('🏠 Auto-loading apartment location and dining places...');
@@ -196,7 +181,7 @@ const VirtualTour = ({ onBack }) => {
       }, 100);
       return () => clearTimeout(timer);
     }
-  }, [showMap, origin, places, mapLoaded]);
+  }, [showMap, origin, places, mapLoaded, isCustomSearch]);
 
   // Update directions when place is selected
   useEffect(() => {
@@ -216,11 +201,18 @@ const VirtualTour = ({ onBack }) => {
   }, [showStreetView, streetViewPlace, mapLoaded]);
 
   /**
-   * ✅ NEW FUNCTION: Auto-load apartment and default category (dining)
+   * ✅ FIXED: Auto-load apartment and default category (dining)
    */
   const autoLoadApartment = async () => {
     setLoading(true);
     setError('');
+    
+    // ✅ SET ORIGIN IMMEDIATELY with new object
+    setOrigin({
+      lat: APARTMENT_COORDINATES.lat,
+      lng: APARTMENT_COORDINATES.lng,
+      name: APARTMENT_COORDINATES.name
+    });
     
     const apartmentLocation = `${APARTMENT_COORDINATES.lat},${APARTMENT_COORDINATES.lng}`;
     
@@ -237,14 +229,21 @@ const VirtualTour = ({ onBack }) => {
       if (!result.places || result.places.length === 0) {
         setError(`No dining places found within 5km of apartment. Try a different category.`);
         setLoading(false);
-        setShowMap(true); // Still show map even if no places
-        setOrigin(APARTMENT_COORDINATES);
+        setShowMap(true);
         return;
       }
       
       console.log(`✅ Found ${result.places.length} dining places`);
+      console.log('✅ Origin coordinates:', APARTMENT_COORDINATES);
       setPlaces(result.places);
-      setOrigin(APARTMENT_COORDINATES);
+      
+      // ✅ Re-confirm origin with new object (forces React update)
+      setOrigin({
+        lat: APARTMENT_COORDINATES.lat,
+        lng: APARTMENT_COORDINATES.lng,
+        name: APARTMENT_COORDINATES.name
+      });
+      
       setShowMap(true);
       setLoading(false);
       
@@ -252,9 +251,7 @@ const VirtualTour = ({ onBack }) => {
       console.error('❌ Auto-load error:', err);
       setError(err.message || 'Failed to load. Please check your connection.');
       setLoading(false);
-      // Still show map with apartment marker
       setShowMap(true);
-      setOrigin(APARTMENT_COORDINATES);
     }
   };
 
@@ -265,9 +262,21 @@ const VirtualTour = ({ onBack }) => {
     }
 
     try {
+      console.log('🗺️ Initializing map with origin:', origin);
+      
+      // ✅ Calculate appropriate zoom based on number of places
+      let initialZoom = 13;
+      if (places.length === 1) {
+        initialZoom = 15;
+      } else if (places.length <= 5) {
+        initialZoom = 13;
+      } else {
+        initialZoom = 12;
+      }
+
       const map = new window.google.maps.Map(mapRef.current, {
         center: { lat: origin.lat, lng: origin.lng },
-        zoom: 13,
+        zoom: initialZoom,
         styles: [
           {
             featureType: 'poi',
@@ -287,7 +296,7 @@ const VirtualTour = ({ onBack }) => {
       const originMarker = new window.google.maps.Marker({
         position: { lat: origin.lat, lng: origin.lng },
         map: map,
-        title: 'Your Location',
+        title: origin.name || 'Your Location',
         icon: {
           path: window.google.maps.SymbolPath.CIRCLE,
           scale: 10,
@@ -298,29 +307,30 @@ const VirtualTour = ({ onBack }) => {
         },
       });
       markersRef.current.push(originMarker);
+      
+      console.log('✅ Green marker placed at:', origin);
 
       // Add place markers
-      // Add place markers
       places.forEach((place, index) => {
-          const marker = new window.google.maps.Marker({
-              position: { lat: place.coordinates.lat, lng: place.coordinates.lng },
-              map: map,
-              title: place.name,
-              label: isCustomSearch ? undefined : {  // ✅ CHANGED - No label for custom
-                  text: `${index + 1}`,
-                  color: 'white',
-                  fontSize: '12px',
-                  fontWeight: 'bold',
-              },
-              icon: {
-                  path: window.google.maps.SymbolPath.CIRCLE,
-                  scale: isCustomSearch ? 18 : 15,  // ✅ CHANGED - Bigger for custom
-                  fillColor: isCustomSearch ? '#ef4444' : '#3b82f6',  // ✅ CHANGED - Red for custom
-                  fillOpacity: 1,
-                  strokeColor: 'white',
-                  strokeWeight: 2,
-                },
-              });
+        const marker = new window.google.maps.Marker({
+          position: { lat: place.coordinates.lat, lng: place.coordinates.lng },
+          map: map,
+          title: place.name,
+          label: isCustomSearch ? undefined : {
+            text: `${index + 1}`,
+            color: 'white',
+            fontSize: '12px',
+            fontWeight: 'bold',
+          },
+          icon: {
+            path: window.google.maps.SymbolPath.CIRCLE,
+            scale: isCustomSearch ? 18 : 15,
+            fillColor: isCustomSearch ? '#ef4444' : '#3b82f6',
+            fillOpacity: 1,
+            strokeColor: 'white',
+            strokeWeight: 2,
+          },
+        });
 
         marker.addListener('click', () => {
           handlePlaceClick(place);
@@ -329,13 +339,31 @@ const VirtualTour = ({ onBack }) => {
         markersRef.current.push(marker);
       });
 
-      // Fit bounds
-      const bounds = new window.google.maps.LatLngBounds();
-      bounds.extend({ lat: origin.lat, lng: origin.lng });
-      places.forEach(place => {
-        bounds.extend({ lat: place.coordinates.lat, lng: place.coordinates.lng });
-      });
-      map.fitBounds(bounds);
+      // ✅ Fit bounds with delay and padding
+      setTimeout(() => {
+        const bounds = new window.google.maps.LatLngBounds();
+        bounds.extend({ lat: origin.lat, lng: origin.lng });
+        
+        places.forEach(place => {
+          bounds.extend({ lat: place.coordinates.lat, lng: place.coordinates.lng });
+        });
+        
+        map.fitBounds(bounds, {
+          top: 50,
+          right: 50,
+          bottom: 50,
+          left: 50
+        });
+        
+        // ✅ Ensure minimum zoom level
+        const listener = window.google.maps.event.addListenerOnce(map, 'bounds_changed', () => {
+          const currentZoom = map.getZoom();
+          if (currentZoom < 11) {
+            map.setZoom(12);
+          }
+        });
+      }, 300);
+      
     } catch (error) {
       console.error('Error initializing map:', error);
     }
@@ -384,7 +412,6 @@ const VirtualTour = ({ onBack }) => {
       const streetViewService = new window.google.maps.StreetViewService();
       const location = { lat: place.coordinates.lat, lng: place.coordinates.lng };
 
-      // Check if street view is available at this location
       streetViewService.getPanorama(
         { location, radius: 50 },
         (data, status) => {
@@ -433,12 +460,12 @@ const VirtualTour = ({ onBack }) => {
     setDirections(null);
     setShowStreetView(false);
     setStreetViewPlace(null);
+    setIsCustomSearch(true);
     
     try {
       console.log('🔍 Searching for:', searchLocation, '| Category:', selectedCategory);
       console.log('🏠 From apartment:', APARTMENT_COORDINATES);
       
-      // ✅ Real API call - always searches from apartment
       const result = await searchVirtualTour(searchLocation, selectedCategory, SEARCH_RADIUS, true);
       
       console.log('📦 API Response:', result);
@@ -448,16 +475,23 @@ const VirtualTour = ({ onBack }) => {
       }
       
       if (!result.places || result.places.length === 0) {
-        setError(`No ${selectedCategory} places found within 5km of apartment. Try a different category.`);
+        setError(`No ${selectedCategory} places found. Try a different search.`);
         setLoading(false);
         setShowMap(false);
         return;
       }
       
-      // ✅ Set apartment as origin (not user-entered location)
-      console.log(`✅ Found ${result.places.length} ${selectedCategory} places within 5km`);
+      console.log(`✅ Found ${result.places.length} places`);
+      console.log('✅ Origin coordinates:', APARTMENT_COORDINATES);
       setPlaces(result.places);
-      setOrigin(APARTMENT_COORDINATES);  // Always use apartment coordinates
+      
+      // ✅ Always use apartment coordinates with new object
+      setOrigin({
+        lat: APARTMENT_COORDINATES.lat,
+        lng: APARTMENT_COORDINATES.lng,
+        name: APARTMENT_COORDINATES.name
+      });
+      
       setShowMap(true);
       setLoading(false);
       
@@ -474,7 +508,6 @@ const VirtualTour = ({ onBack }) => {
     
     if (origin) {
       try {
-        // Real API call for directions
         const originStr = `${origin.lat},${origin.lng}`;
         const destStr = `${place.coordinates.lat},${place.coordinates.lng}`;
         
@@ -485,7 +518,6 @@ const VirtualTour = ({ onBack }) => {
         }
       } catch (err) {
         console.error('Directions error:', err);
-        // Fallback to estimated directions
         setDirections({
           distance: { text: `${place.distance} km` },
           duration: { text: `${Math.floor(place.distance * 3)} mins` }
@@ -508,15 +540,24 @@ const VirtualTour = ({ onBack }) => {
     setShowMap(true);
   };
 
-  // ✅ FIX #2: When category changes, auto-search from apartment
+  /**
+   * ✅ FIXED: When category changes, auto-search from apartment
+   */
   const handleCategoryChange = (categoryId) => {
     console.log('📂 Category changed to:', categoryId);
     setSelectedCategory(categoryId);
     setSelectedPlace(null);
     setDirections(null);
     setSearchLocation('');
+    setIsCustomSearch(false);
     
-    // Auto-search new category from apartment
+    // ✅ SET ORIGIN IMMEDIATELY
+    setOrigin({
+      lat: APARTMENT_COORDINATES.lat,
+      lng: APARTMENT_COORDINATES.lng,
+      name: APARTMENT_COORDINATES.name
+    });
+    
     setLoading(true);
     setError('');
     
@@ -526,8 +567,16 @@ const VirtualTour = ({ onBack }) => {
       .then(result => {
         if (result.success && result.places && result.places.length > 0) {
           console.log(`✅ Loaded ${result.places.length} ${categoryId} places`);
+          console.log('✅ Origin coordinates:', APARTMENT_COORDINATES);
           setPlaces(result.places);
-          setOrigin(APARTMENT_COORDINATES);
+          
+          // ✅ Re-confirm with new object
+          setOrigin({
+            lat: APARTMENT_COORDINATES.lat,
+            lng: APARTMENT_COORDINATES.lng,
+            name: APARTMENT_COORDINATES.name
+          });
+          
           setShowMap(true);
         } else {
           setError(`No ${categoryId} places found within 5km`);
@@ -542,7 +591,6 @@ const VirtualTour = ({ onBack }) => {
       });
   };
 
-  // Get icon component
   const getCategoryIcon = (iconName) => {
     const IconComponent = IconMap[iconName];
     return IconComponent ? <IconComponent size={16} strokeWidth={2} /> : null;
@@ -639,7 +687,7 @@ const VirtualTour = ({ onBack }) => {
           justifyContent: 'space-between',
           gap: '1rem'
         }}>
-          {/* Categories - ✅ FIX #1: Black/white icons */}
+          {/* Categories */}
           <div style={{
             display: 'flex',
             gap: '0.5rem',
@@ -674,12 +722,11 @@ const VirtualTour = ({ onBack }) => {
             ))}
           </div>
 
-          {/* ✅ FIX #2: Search icon on LEFT side, black/white */}
+          {/* Search Box */}
           <div style={{ 
             position: 'relative',
             width: '320px'
           }}>
-            {/* Search Icon - LEFT SIDE */}
             <div
               style={{
                 position: 'absolute',
@@ -828,7 +875,6 @@ const VirtualTour = ({ onBack }) => {
                     
                     {/* Content in MIDDLE */}
                     <div style={{ flex: 1, minWidth: 0, paddingTop: '0.25rem' }}>
-                      {/* Place Name */}
                       <h4 style={{
                         fontSize: '1.05rem',
                         fontWeight: '600',
@@ -839,7 +885,6 @@ const VirtualTour = ({ onBack }) => {
                         {place.name}
                       </h4>
 
-                      {/* Three info pills - Distance, Walking Time, Rating */}
                       <div style={{
                         display: 'flex',
                         alignItems: 'center',
@@ -897,7 +942,6 @@ const VirtualTour = ({ onBack }) => {
                         )}
                       </div>
 
-                      {/* Address - Optional, smaller text below */}
                       {place.address && (
                         <p style={{
                           fontSize: '0.75rem',
@@ -913,7 +957,7 @@ const VirtualTour = ({ onBack }) => {
                       )}
                     </div>
 
-                    {/* Icons on RIGHT side - Map and Walking - HORIZONTAL - NO BACKGROUND */}
+                    {/* Icons on RIGHT side */}
                     <div style={{
                       display: 'flex',
                       flexDirection: 'row',
@@ -922,7 +966,6 @@ const VirtualTour = ({ onBack }) => {
                       alignItems: 'flex-start',
                       paddingTop: '2.0rem'
                     }}>
-                      {/* Map/Directions icon - NO BACKGROUND */}
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
@@ -951,7 +994,6 @@ const VirtualTour = ({ onBack }) => {
                         <MapPin size={28} color="#3b82f6" strokeWidth={2} />
                       </button>
                       
-                      {/* Walking directions icon - Opens Street View */}
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
@@ -997,7 +1039,7 @@ const VirtualTour = ({ onBack }) => {
                   }}
                 />
 
-                {/* Back to Map Button - Shows when in Street View */}
+                {/* Back to Map Button */}
                 {showStreetView && (
                   <button
                     onClick={handleBackToMap}
@@ -1062,7 +1104,7 @@ const VirtualTour = ({ onBack }) => {
                   </div>
                 )}
 
-                {/* Directions Info - Shows only in Map mode */}
+                {/* Directions Info */}
                 {!showStreetView && selectedPlace && directions && (
                   <div style={{
                     position: 'absolute',
