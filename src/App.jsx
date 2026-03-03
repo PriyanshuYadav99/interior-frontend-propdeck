@@ -1159,7 +1159,7 @@ import VirtualTour from './VirtualTour';
 import './App.css';
 
 const getRandomScenarios = async () => {
-  const response = await fetch('http://127.0.0.1:5000/api/scenario/random', {
+  const response = await fetch('https://interior-backend-production.up.railway.app/api/scenario/random', {
     method: 'GET',
     headers: { 'Content-Type': 'application/json' }
   });
@@ -1168,7 +1168,7 @@ const getRandomScenarios = async () => {
 };
 
 const searchVirtualTour = async (location, category) => {
-  const response = await fetch('http://127.0.0.1:5000/api/virtual-tour/search', {
+  const response = await fetch('https://interior-backend-production.up.railway.app/api/virtual-tour/search', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ location, category, radius: 5000 })
