@@ -1,1293 +1,49 @@
-// import React, { useState, useEffect, useRef } from 'react';
-// import { ChevronLeft, MapPin, Navigation, Star, Search, Loader2, AlertCircle } from 'lucide-react';
-
-// // ✅ FIX #1: Icons changed to use lucide-react icons (black/white by default)
-// const categories = [
-//   { id: 'dining', label: 'Dining', icon: 'Utensils' },
-//   { id: 'education', label: 'Education', icon: 'GraduationCap' },
-//   { id: 'nature', label: 'Nature', icon: 'Trees' },
-//   { id: 'health', label: 'Health', icon: 'Cross' },
-//   { id: 'transport', label: 'Transport', icon: 'Bus' },
-//   { id: 'shop', label: 'Shop', icon: 'ShoppingCart' },
-//   { id: 'gym', label: 'Gym', icon: 'Dumbbell' }
-// ];
-
-// // Import all icons dynamically
-// import { 
-//   Utensils, 
-//   GraduationCap, 
-//   Trees, 
-//   Cross, 
-//   Bus, 
-//   ShoppingCart, 
-//   Dumbbell 
-// } from 'lucide-react';
-
-// // Icon mapping
-// const IconMap = {
-//   Utensils,
-//   GraduationCap,
-//   Trees,
-//   Cross,
-//   Bus,
-//   ShoppingCart,
-//   Dumbbell
-// };
-
-// // ✅ Backend configuration
-// const BACKEND_URL = 'http://127.0.0.1:5000';
-// const GOOGLE_MAPS_API_KEY = 'AIzaSyAfDoI98BjfukXxFsnXB8qQJPK_0Bi7ntI';
-
-// // ✅ APARTMENT CONFIGURATION - Edit these coordinates for your apartment
-// const APARTMENT_COORDINATES = {
-//   lat: 25.0694755,  // VERDE BY SOBHA, Dubai
-//   lng: 55.1468862,  // VERDE BY SOBHA, Dubai
-//   name: 'VERDE BY SOBHA'
-// };
-
-// // ✅ Search radius in meters (5km = 5000 meters)
-// const SEARCH_RADIUS = 5000;
-
-// // ============================================================
-// // API HELPER FUNCTIONS
-// // ============================================================
-
-// const searchVirtualTour = async (location, category, radius = SEARCH_RADIUS, isCustomSearch = false) => {
-//   try {
-//     console.log('[API] Search mode:', isCustomSearch ? 'CUSTOM' : 'CATEGORY');
-//     console.log('[API] Searching:', { location, category, radius });
-    
-//     const response = await fetch(`${BACKEND_URL}/api/virtual-tour/search`, {
-//       method: 'POST',
-//       headers: {
-//         'Content-Type': 'application/json',
-//       },
-//       body: JSON.stringify({
-//         location: location || `${APARTMENT_COORDINATES.lat},${APARTMENT_COORDINATES.lng}`,
-//         category,
-//         radius,
-//         is_custom_search: isCustomSearch
-//       })
-//     });
-
-//     if (!response.ok) {
-//       const errorData = await response.json();
-//       console.error('[API] Error response:', errorData);
-//       throw new Error(errorData.error || 'Search failed');
-//     }
-
-//     const data = await response.json();
-//     console.log('[API] Success response:', data);
-//     return data;
-//   } catch (error) {
-//     console.error('[API] Search error:', error);
-//     throw error;
-//   }
-// };
-
-// const getDirections = async (origin, destination, mode = 'driving') => {
-//   try {
-//     const response = await fetch(`${BACKEND_URL}/api/virtual-tour/directions`, {
-//       method: 'POST',
-//       headers: {
-//         'Content-Type': 'application/json',
-//       },
-//       body: JSON.stringify({
-//         origin,
-//         destination,
-//         mode
-//       })
-//     });
-
-//     if (!response.ok) {
-//       throw new Error('Directions fetch failed');
-//     }
-
-//     return await response.json();
-//   } catch (error) {
-//     console.error('Directions API error:', error);
-//     throw error;
-//   }
-// };
-
-// const getPlaceDetails = async (placeId) => {
-//   try {
-//     const response = await fetch(`${BACKEND_URL}/api/virtual-tour/place-details/${placeId}`);
-    
-//     if (!response.ok) {
-//       throw new Error('Place details fetch failed');
-//     }
-
-//     return await response.json();
-//   } catch (error) {
-//     console.error('Place details API error:', error);
-//     throw error;
-//   }
-// };
-
-// // ============================================================
-// // MAIN COMPONENT
-// // ============================================================
-
-// const VirtualTour = ({ onBack }) => {
-//   const [searchLocation, setSearchLocation] = useState('');
-//   const [selectedCategory, setSelectedCategory] = useState('dining');
-//   const [places, setPlaces] = useState([]);
-//   const [loading, setLoading] = useState(false);
-//   const [origin, setOrigin] = useState(null);
-//   const [selectedPlace, setSelectedPlace] = useState(null);
-//   const [directions, setDirections] = useState(null);
-//   const [error, setError] = useState('');
-//   const [showMap, setShowMap] = useState(false);
-//   const [mapLoaded, setMapLoaded] = useState(false);
-//   const [showStreetView, setShowStreetView] = useState(false);
-//   const [streetViewPlace, setStreetViewPlace] = useState(null);
-//   const [isCustomSearch, setIsCustomSearch] = useState(false);
-  
-//   // Map references
-//   const mapRef = useRef(null);
-//   const googleMapRef = useRef(null);
-//   const markersRef = useRef([]);
-//   const directionsRendererRef = useRef(null);
-//   const streetViewRef = useRef(null);
-
-//   // Load Google Maps script
-//   useEffect(() => {
-//     if (!window.google) {
-//       const script = document.createElement('script');
-//       script.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_API_KEY}&libraries=places`;
-//       script.async = true;
-//       script.defer = true;
-//       script.onload = () => setMapLoaded(true);
-//       document.head.appendChild(script);
-//     } else {
-//       setMapLoaded(true);
-//     }
-//   }, []);
-
-//   // ✅ AUTO-LOAD apartment location and dining places on mount
-//   useEffect(() => {
-//     if (mapLoaded) {
-//       console.log('🏠 Auto-loading apartment location and dining places...');
-//       autoLoadApartment();
-//     }
-//   }, [mapLoaded]);
-
-//   // Initialize map when data is ready
-//   useEffect(() => {
-//     if (showMap && origin && places.length > 0 && mapLoaded && mapRef.current) {
-//       const timer = setTimeout(() => {
-//         initializeMap();
-//       }, 100);
-//       return () => clearTimeout(timer);
-//     }
-//   }, [showMap, origin, places, mapLoaded, isCustomSearch]);
-
-//   // Update directions when place is selected
-//   useEffect(() => {
-//     if (directions && googleMapRef.current && window.google) {
-//       displayDirections();
-//     }
-//   }, [directions]);
-
-//   // Initialize Street View when enabled
-//   useEffect(() => {
-//     if (showStreetView && streetViewPlace && mapLoaded && mapRef.current) {
-//       const timer = setTimeout(() => {
-//         initializeStreetView(streetViewPlace);
-//       }, 100);
-//       return () => clearTimeout(timer);
-//     }
-//   }, [showStreetView, streetViewPlace, mapLoaded]);
-
-//   /**
-//    * ✅ FIXED: Auto-load apartment and default category (dining)
-//    */
-//   const autoLoadApartment = async () => {
-//     setLoading(true);
-//     setError('');
-    
-//     // ✅ SET ORIGIN IMMEDIATELY with new object
-//     setOrigin({
-//       lat: APARTMENT_COORDINATES.lat,
-//       lng: APARTMENT_COORDINATES.lng,
-//       name: APARTMENT_COORDINATES.name
-//     });
-    
-//     const apartmentLocation = `${APARTMENT_COORDINATES.lat},${APARTMENT_COORDINATES.lng}`;
-    
-//     try {
-//       console.log('📍 Loading apartment:', APARTMENT_COORDINATES);
-//       console.log('🍽️ Loading dining places...');
-      
-//       const result = await searchVirtualTour(apartmentLocation, 'dining', SEARCH_RADIUS, false);
-      
-//       if (!result.success) {
-//         throw new Error(result.error || 'Search failed');
-//       }
-      
-//       if (!result.places || result.places.length === 0) {
-//         setError(`No dining places found within 5km of apartment. Try a different category.`);
-//         setLoading(false);
-//         setShowMap(true);
-//         return;
-//       }
-      
-//       console.log(`✅ Found ${result.places.length} dining places`);
-//       console.log('✅ Origin coordinates:', APARTMENT_COORDINATES);
-//       setPlaces(result.places);
-      
-//       // ✅ Re-confirm origin with new object (forces React update)
-//       setOrigin({
-//         lat: APARTMENT_COORDINATES.lat,
-//         lng: APARTMENT_COORDINATES.lng,
-//         name: APARTMENT_COORDINATES.name
-//       });
-      
-//       setShowMap(true);
-//       setLoading(false);
-      
-//     } catch (err) {
-//       console.error('❌ Auto-load error:', err);
-//       setError(err.message || 'Failed to load. Please check your connection.');
-//       setLoading(false);
-//       setShowMap(true);
-//     }
-//   };
-
-//   const initializeMap = () => {
-//     if (!window.google || !mapRef.current) {
-//       console.log('Map not ready');
-//       return;
-//     }
-
-//     try {
-//       console.log('🗺️ Initializing map with origin:', origin);
-      
-//       // ✅ Calculate appropriate zoom based on number of places
-//       let initialZoom = 13;
-//       if (places.length === 1) {
-//         initialZoom = 15;
-//       } else if (places.length <= 5) {
-//         initialZoom = 13;
-//       } else {
-//         initialZoom = 12;
-//       }
-
-//       const map = new window.google.maps.Map(mapRef.current, {
-//         center: { lat: origin.lat, lng: origin.lng },
-//         zoom: initialZoom,
-//         styles: [
-//           {
-//             featureType: 'poi',
-//             elementType: 'labels',
-//             stylers: [{ visibility: 'off' }]
-//           }
-//         ]
-//       });
-
-//       googleMapRef.current = map;
-
-//       // Clear old markers
-//       markersRef.current.forEach(marker => marker.setMap(null));
-//       markersRef.current = [];
-
-//       // Add origin marker (green)
-//       const originMarker = new window.google.maps.Marker({
-//         position: { lat: origin.lat, lng: origin.lng },
-//         map: map,
-//         title: origin.name || 'Your Location',
-//         icon: {
-//           path: window.google.maps.SymbolPath.CIRCLE,
-//           scale: 10,
-//           fillColor: '#10b981',
-//           fillOpacity: 1,
-//           strokeColor: 'white',
-//           strokeWeight: 3,
-//         },
-//       });
-//       markersRef.current.push(originMarker);
-      
-//       console.log('✅ Green marker placed at:', origin);
-
-//       // Add place markers
-//       places.forEach((place, index) => {
-//         const marker = new window.google.maps.Marker({
-//           position: { lat: place.coordinates.lat, lng: place.coordinates.lng },
-//           map: map,
-//           title: place.name,
-//           label: isCustomSearch ? undefined : {
-//             text: `${index + 1}`,
-//             color: 'white',
-//             fontSize: '12px',
-//             fontWeight: 'bold',
-//           },
-//           icon: {
-//             path: window.google.maps.SymbolPath.CIRCLE,
-//             scale: isCustomSearch ? 18 : 15,
-//             fillColor: isCustomSearch ? '#ef4444' : '#3b82f6',
-//             fillOpacity: 1,
-//             strokeColor: 'white',
-//             strokeWeight: 2,
-//           },
-//         });
-
-//         marker.addListener('click', () => {
-//           handlePlaceClick(place);
-//         });
-
-//         markersRef.current.push(marker);
-//       });
-
-//       // ✅ Fit bounds with delay and padding
-//       setTimeout(() => {
-//         const bounds = new window.google.maps.LatLngBounds();
-//         bounds.extend({ lat: origin.lat, lng: origin.lng });
-        
-//         places.forEach(place => {
-//           bounds.extend({ lat: place.coordinates.lat, lng: place.coordinates.lng });
-//         });
-        
-//         map.fitBounds(bounds, {
-//           top: 50,
-//           right: 50,
-//           bottom: 50,
-//           left: 50
-//         });
-        
-//         // ✅ Ensure minimum zoom level
-//         const listener = window.google.maps.event.addListenerOnce(map, 'bounds_changed', () => {
-//           const currentZoom = map.getZoom();
-//           if (currentZoom < 11) {
-//             map.setZoom(12);
-//           }
-//         });
-//       }, 300);
-      
-//     } catch (error) {
-//       console.error('Error initializing map:', error);
-//     }
-//   };
-
-//   const displayDirections = () => {
-//     if (!googleMapRef.current || !window.google || !selectedPlace) return;
-
-//     if (directionsRendererRef.current) {
-//       directionsRendererRef.current.setMap(null);
-//     }
-
-//     const directionsRenderer = new window.google.maps.DirectionsRenderer({
-//       map: googleMapRef.current,
-//       suppressMarkers: true,
-//       polylineOptions: {
-//         strokeColor: '#9333ea',
-//         strokeWeight: 4,
-//       },
-//     });
-
-//     directionsRendererRef.current = directionsRenderer;
-
-//     const directionsService = new window.google.maps.DirectionsService();
-//     directionsService.route(
-//       {
-//         origin: { lat: origin.lat, lng: origin.lng },
-//         destination: { lat: selectedPlace.coordinates.lat, lng: selectedPlace.coordinates.lng },
-//         travelMode: window.google.maps.TravelMode.DRIVING,
-//       },
-//       (result, status) => {
-//         if (status === 'OK') {
-//           directionsRenderer.setDirections(result);
-//         }
-//       }
-//     );
-//   };
-
-//   const initializeStreetView = (place) => {
-//     if (!window.google || !mapRef.current) {
-//       console.log('Street View not ready');
-//       return;
-//     }
-
-//     try {
-//       const streetViewService = new window.google.maps.StreetViewService();
-//       const location = { lat: place.coordinates.lat, lng: place.coordinates.lng };
-
-//       streetViewService.getPanorama(
-//         { location, radius: 50 },
-//         (data, status) => {
-//           if (status === 'OK') {
-//             const panorama = new window.google.maps.StreetViewPanorama(
-//               mapRef.current,
-//               {
-//                 position: location,
-//                 pov: { heading: 165, pitch: 0 },
-//                 zoom: 1,
-//                 addressControl: true,
-//                 enableCloseButton: false,
-//                 fullscreenControl: true,
-//               }
-//             );
-//             streetViewRef.current = panorama;
-//           } else {
-//             console.error('Street View not available at this location');
-//             alert('Street View is not available at this location. Try another place.');
-//             setShowStreetView(false);
-//           }
-//         }
-//       );
-//     } catch (error) {
-//       console.error('Error initializing Street View:', error);
-//       setShowStreetView(false);
-//     }
-//   };
-
-//   const handleKeyPress = (e) => {
-//     if (e.key === 'Enter' && !loading) {
-//       e.preventDefault();
-//       searchNearbyPlaces();
-//     }
-//   };
-
-//   const searchNearbyPlaces = async () => {
-//     if (!searchLocation.trim()) {
-//       setError('Please enter a location');
-//       return;
-//     }
-
-//     setLoading(true);
-//     setError('');
-//     setSelectedPlace(null);
-//     setDirections(null);
-//     setShowStreetView(false);
-//     setStreetViewPlace(null);
-//     setIsCustomSearch(true);
-    
-//     try {
-//       console.log('🔍 Searching for:', searchLocation, '| Category:', selectedCategory);
-//       console.log('🏠 From apartment:', APARTMENT_COORDINATES);
-      
-//       const result = await searchVirtualTour(searchLocation, selectedCategory, SEARCH_RADIUS, true);
-      
-//       console.log('📦 API Response:', result);
-      
-//       if (!result.success) {
-//         throw new Error(result.error || 'Search failed');
-//       }
-      
-//       if (!result.places || result.places.length === 0) {
-//         setError(`No ${selectedCategory} places found. Try a different search.`);
-//         setLoading(false);
-//         setShowMap(false);
-//         return;
-//       }
-      
-//       console.log(`✅ Found ${result.places.length} places`);
-//       console.log('✅ Origin coordinates:', APARTMENT_COORDINATES);
-//       setPlaces(result.places);
-      
-//       // ✅ Always use apartment coordinates with new object
-//       setOrigin({
-//         lat: APARTMENT_COORDINATES.lat,
-//         lng: APARTMENT_COORDINATES.lng,
-//         name: APARTMENT_COORDINATES.name
-//       });
-      
-//       setShowMap(true);
-//       setLoading(false);
-      
-//     } catch (err) {
-//       console.error('❌ Search error:', err);
-//       setError(err.message || 'Failed to search. Please check your connection and try again.');
-//       setLoading(false);
-//       setShowMap(false);
-//     }
-//   };
-
-//   const handlePlaceClick = async (place) => {
-//     setSelectedPlace(place);
-    
-//     if (origin) {
-//       try {
-//         const originStr = `${origin.lat},${origin.lng}`;
-//         const destStr = `${place.coordinates.lat},${place.coordinates.lng}`;
-        
-//         const result = await getDirections(originStr, destStr, 'driving');
-        
-//         if (result.success) {
-//           setDirections(result.directions);
-//         }
-//       } catch (err) {
-//         console.error('Directions error:', err);
-//         setDirections({
-//           distance: { text: `${place.distance} km` },
-//           duration: { text: `${Math.floor(place.distance * 3)} mins` }
-//         });
-//       }
-//     }
-//   };
-
-//   const handleStreetViewClick = (place) => {
-//     console.log('🚶 Opening Street View for:', place.name);
-//     setStreetViewPlace(place);
-//     setShowStreetView(true);
-//     setShowMap(false);
-//   };
-
-//   const handleBackToMap = () => {
-//     console.log('🗺️ Back to Map view');
-//     setShowStreetView(false);
-//     setStreetViewPlace(null);
-//     setShowMap(true);
-//   };
-
-//   /**
-//    * ✅ FIXED: When category changes, auto-search from apartment
-//    */
-//   const handleCategoryChange = (categoryId) => {
-//     console.log('📂 Category changed to:', categoryId);
-//     setSelectedCategory(categoryId);
-//     setSelectedPlace(null);
-//     setDirections(null);
-//     setSearchLocation('');
-//     setIsCustomSearch(false);
-    
-//     // ✅ SET ORIGIN IMMEDIATELY
-//     setOrigin({
-//       lat: APARTMENT_COORDINATES.lat,
-//       lng: APARTMENT_COORDINATES.lng,
-//       name: APARTMENT_COORDINATES.name
-//     });
-    
-//     setLoading(true);
-//     setError('');
-    
-//     const apartmentLocation = `${APARTMENT_COORDINATES.lat},${APARTMENT_COORDINATES.lng}`;
-    
-//     searchVirtualTour(apartmentLocation, categoryId, SEARCH_RADIUS, false)
-//       .then(result => {
-//         if (result.success && result.places && result.places.length > 0) {
-//           console.log(`✅ Loaded ${result.places.length} ${categoryId} places`);
-//           console.log('✅ Origin coordinates:', APARTMENT_COORDINATES);
-//           setPlaces(result.places);
-          
-//           // ✅ Re-confirm with new object
-//           setOrigin({
-//             lat: APARTMENT_COORDINATES.lat,
-//             lng: APARTMENT_COORDINATES.lng,
-//             name: APARTMENT_COORDINATES.name
-//           });
-          
-//           setShowMap(true);
-//         } else {
-//           setError(`No ${categoryId} places found within 5km`);
-//           setPlaces([]);
-//         }
-//         setLoading(false);
-//       })
-//       .catch(err => {
-//         console.error(`❌ Error loading ${categoryId}:`, err);
-//         setError(err.message || 'Failed to load places');
-//         setLoading(false);
-//       });
-//   };
-
-//   const getCategoryIcon = (iconName) => {
-//     const IconComponent = IconMap[iconName];
-//     return IconComponent ? <IconComponent size={16} strokeWidth={2} /> : null;
-//   };
-
-//   return (
-//     <>
-//       {/* Backdrop */}
-//       <div
-//         style={{
-//           position: 'fixed',
-//           top: 0,
-//           left: 0,
-//           right: 0,
-//           bottom: 0,
-//           background: 'rgba(0, 0, 0, 0.5)',
-//           zIndex: 998,
-//           animation: 'fadeIn 0.3s ease-out'
-//         }}
-//         onClick={onBack}
-//       />
-
-//       {/* Close Button */}
-//       <button
-//         onClick={onBack}
-//         style={{
-//           position: 'fixed',
-//           top: '20px',
-//           left: '50%',
-//           transform: 'translateX(-50%)',
-//           width: '48px',
-//           height: '48px',
-//           borderRadius: '50%',
-//           border: 'none',
-//           background: 'white',
-//           boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)',
-//           display: 'flex',
-//           alignItems: 'center',
-//           justifyContent: 'center',
-//           cursor: 'pointer',
-//           transition: 'all 0.2s',
-//           zIndex: 1001
-//         }}
-//       >
-//         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#10b981" strokeWidth="2.5">
-//           <polyline points="6 9 12 15 18 9"></polyline>
-//         </svg>
-//       </button>
-
-//       {/* Main Container */}
-//       <div style={{
-//         position: 'fixed',
-//         top: '90px',
-//         left: 0,
-//         right: 0,
-//         bottom: 0,
-//         background: 'white',
-//         borderTopLeftRadius: '24px',
-//         borderTopRightRadius: '24px',
-//         zIndex: 999,
-//         animation: 'slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1)',
-//         boxShadow: '0 -4px 20px rgba(0, 0, 0, 0.1)',
-//         display: 'flex',
-//         flexDirection: 'column',
-//         overflow: 'hidden'
-//       }}>
-        
-//         {/* Header with Virtual Tour title */}
-//         <div style={{
-//           padding: '1rem 1.5rem',
-//           borderBottom: '1px solid #e5e7eb',
-//           background: 'white'
-//         }}>
-//           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-//             <ChevronLeft size={28} color="#1f2937" strokeWidth={2.5} />
-//             <h1 style={{
-//               fontSize: '1.75rem',
-//               fontWeight: '700',
-//               margin: 0,
-//               color: '#1f2937'
-//             }}>
-//               Virtual Tour
-//             </h1>
-//           </div>
-//         </div>
-
-//         {/* Categories + Search Row */}
-//         <div style={{
-//           padding: '0.75rem 1.5rem',
-//           borderBottom: '1px solid #e5e7eb',
-//           background: '#f5f1e8',
-//           display: 'flex',
-//           alignItems: 'center',
-//           justifyContent: 'space-between',
-//           gap: '1rem'
-//         }}>
-//           {/* Categories */}
-//           <div style={{
-//             display: 'flex',
-//             gap: '0.5rem',
-//             flexWrap: 'wrap'
-//           }}>
-//             {categories.map(cat => (
-//               <button
-//                 key={cat.id}
-//                 onClick={() => handleCategoryChange(cat.id)}
-//                 disabled={loading}
-//                 style={{
-//                   padding: '0.5rem 1rem',
-//                   borderRadius: '20px',
-//                   border: 'none',
-//                   background: selectedCategory === cat.id 
-//                     ? '#3b82f6'
-//                     : '#f3f4f6',
-//                   color: selectedCategory === cat.id ? 'white' : '#374151',
-//                   cursor: loading ? 'not-allowed' : 'pointer',
-//                   transition: 'all 0.2s',
-//                   display: 'flex',
-//                   alignItems: 'center',
-//                   gap: '0.5rem',
-//                   fontSize: '0.875rem',
-//                   fontWeight: '500',
-//                   opacity: loading ? 0.6 : 1
-//                 }}
-//               >
-//                 {getCategoryIcon(cat.icon)}
-//                 <span>{cat.label}</span>
-//               </button>
-//             ))}
-//           </div>
-
-//           {/* Search Box */}
-//           <div style={{ 
-//             position: 'relative',
-//             width: '320px'
-//           }}>
-//             <div
-//               style={{
-//                 position: 'absolute',
-//                 left: '12px',
-//                 top: '50%',
-//                 transform: 'translateY(-50%)',
-//                 display: 'flex',
-//                 alignItems: 'center',
-//                 justifyContent: 'center',
-//                 pointerEvents: 'none',
-//                 color: '#6b7280'
-//               }}
-//             >
-//               {loading ? (
-//                 <Loader2 size={18} style={{ animation: 'spin 1s linear infinite' }} />
-//               ) : (
-//                 <Search size={18} />
-//               )}
-//             </div>
-            
-//             <input
-//               type="text"
-//               placeholder="Search location"
-//               value={searchLocation}
-//               onChange={(e) => {
-//                 setSearchLocation(e.target.value);
-//                 setError('');
-//               }}
-//               onKeyPress={handleKeyPress}
-//               disabled={loading}
-//               style={{
-//                 width: '100%',
-//                 padding: '0.6rem 1rem 0.6rem 2.75rem',
-//                 fontSize: '0.875rem',
-//                 border: error ? '1.5px solid #ef4444' : '1.5px solid #e5e7eb',
-//                 borderRadius: '10px',
-//                 outline: 'none',
-//                 transition: 'all 0.2s',
-//                 background: 'white'
-//               }}
-//               onFocus={(e) => {
-//                 if (!error) e.target.style.borderColor = '#3b82f6';
-//               }}
-//               onBlur={(e) => {
-//                 if (!error) e.target.style.borderColor = '#e5e7eb';
-//               }}
-//             />
-//           </div>
-//         </div>
-
-//         {/* Error Message */}
-//         {error && (
-//           <div style={{
-//             margin: '0.5rem 1.5rem 0',
-//             padding: '0.75rem 1rem',
-//             background: '#fef2f2',
-//             border: '1px solid #fecaca',
-//             borderRadius: '8px',
-//             color: '#dc2626',
-//             fontSize: '0.875rem',
-//             display: 'flex',
-//             alignItems: 'center',
-//             gap: '0.5rem'
-//           }}>
-//             <AlertCircle size={16} />
-//             {error}
-//           </div>
-//         )}
-
-//         {/* Main Content: Places List + Map */}
-//         <div style={{
-//           flex: 1,
-//           display: 'flex',
-//           overflow: 'hidden',
-//           background: '#f5f1e8'
-//         }}>
-            
-//           {(showMap || showStreetView) && places.length > 0 ? (
-//             <>
-//               {/* Places List - 50% width */}
-//               <div style={{
-//                 width: '50%',
-//                 background: '#f5f1e8',
-//                 borderRight: '1px solid #e5e7eb',
-//                 overflowY: 'auto',
-//                 padding: '1rem'
-//               }}>
-//                 <h3 style={{
-//                   fontSize: '0.95rem',
-//                   fontWeight: '700',
-//                   marginBottom: '0.75rem',
-//                   color: '#1f2937',
-//                   padding: '0 0.5rem'
-//                 }}>
-//                   {places.length} {selectedCategory} places found
-//                 </h3>
-
-//                 {places.map((place, index) => (
-//                   <div
-//                     key={place.id}
-//                     style={{
-//                       background: selectedPlace?.id === place.id ? '#f0fdf4' : 'white',
-//                       border: selectedPlace?.id === place.id 
-//                         ? '2px solid #10b981' 
-//                         : '1px solid #e5e7eb',
-//                       borderRadius: '12px',
-//                       padding: '1rem',
-//                       marginBottom: '0.75rem',
-//                       cursor: 'pointer',
-//                       transition: 'all 0.2s',
-//                       display: 'flex',
-//                       gap: '1rem',
-//                       alignItems: 'flex-start'
-//                     }}
-//                     onClick={() => handlePlaceClick(place)}
-//                   >
-//                     {/* Photo - LEFT side */}
-//                     {place.photo_url ? (
-//                       <img
-//                         src={place.photo_url}
-//                         alt={place.name}
-//                         style={{
-//                           width: '100px',
-//                           height: '100px',
-//                           objectFit: 'cover',
-//                           borderRadius: '10px',
-//                           flexShrink: 0
-//                         }}
-//                       />
-//                     ) : (
-//                       <div style={{
-//                         width: '100px',
-//                         height: '100px',
-//                         background: '#f3f4f6',
-//                         borderRadius: '10px',
-//                         flexShrink: 0,
-//                         display: 'flex',
-//                         alignItems: 'center',
-//                         justifyContent: 'center',
-//                         color: '#9ca3af',
-//                         fontSize: '2.5rem'
-//                       }}>
-//                         {getCategoryIcon(categories.find(c => c.id === selectedCategory)?.icon)}
-//                       </div>
-//                     )}
-                    
-//                     {/* Content in MIDDLE */}
-//                     <div style={{ flex: 1, minWidth: 0, paddingTop: '0.25rem' }}>
-//                       <h4 style={{
-//                         fontSize: '1.05rem',
-//                         fontWeight: '600',
-//                         margin: '0 0 0.75rem 0',
-//                         color: '#1f2937',
-//                         lineHeight: '1.3'
-//                       }}>
-//                         {place.name}
-//                       </h4>
-
-//                       <div style={{
-//                         display: 'flex',
-//                         alignItems: 'center',
-//                         gap: '0.5rem',
-//                         flexWrap: 'wrap'
-//                       }}>
-//                         {/* Distance pill */}
-//                         <div style={{
-//                           display: 'inline-flex',
-//                           alignItems: 'center',
-//                           gap: '0.35rem',
-//                           padding: '0.35rem 0.75rem',
-//                           background: '#f3f4f6',
-//                           borderRadius: '20px',
-//                           fontSize: '0.8rem',
-//                           color: '#374151',
-//                           fontWeight: '500'
-//                         }}>
-//                           <Navigation size={13} strokeWidth={2.5} />
-//                           <span>~{place.distance}km</span>
-//                         </div>
-
-//                         {/* Walking time pill */}
-//                         <div style={{
-//                           display: 'inline-flex',
-//                           alignItems: 'center',
-//                           gap: '0.35rem',
-//                           padding: '0.35rem 0.75rem',
-//                           background: '#f3f4f6',
-//                           borderRadius: '20px',
-//                           fontSize: '0.8rem',
-//                           color: '#374151',
-//                           fontWeight: '500'
-//                         }}>
-//                           <span style={{ fontSize: '0.9rem' }}>🚶</span>
-//                           <span>~{Math.floor(place.distance * 12)}min</span>
-//                         </div>
-
-//                         {/* Rating pill */}
-//                         {place.rating && (
-//                           <div style={{
-//                             display: 'inline-flex',
-//                             alignItems: 'center',
-//                             gap: '0.35rem',
-//                             padding: '0.35rem 0.75rem',
-//                             background: '#fef3c7',
-//                             borderRadius: '20px',
-//                             fontSize: '0.8rem',
-//                             color: '#92400e',
-//                             fontWeight: '600'
-//                           }}>
-//                             <Star size={13} fill="#fbbf24" color="#fbbf24" strokeWidth={0} />
-//                             <span>{place.rating}</span>
-//                           </div>
-//                         )}
-//                       </div>
-
-//                       {place.address && (
-//                         <p style={{
-//                           fontSize: '0.75rem',
-//                           color: '#9ca3af',
-//                           margin: '0.65rem 0 0 0',
-//                           overflow: 'hidden',
-//                           textOverflow: 'ellipsis',
-//                           whiteSpace: 'nowrap',
-//                           lineHeight: '1.4'
-//                         }}>
-//                           {place.address}
-//                         </p>
-//                       )}
-//                     </div>
-
-//                     {/* Icons on RIGHT side */}
-//                     <div style={{
-//                       display: 'flex',
-//                       flexDirection: 'row',
-//                       gap: '0.75rem',
-//                       flexShrink: 0,
-//                       alignItems: 'flex-start',
-//                       paddingTop: '2.0rem'
-//                     }}>
-//                       <button
-//                         onClick={(e) => {
-//                           e.stopPropagation();
-//                           handlePlaceClick(place);
-//                         }}
-//                         style={{
-//                           width: '32px',
-//                           height: '32px',
-//                           border: 'none',
-//                           background: 'transparent',
-//                           display: 'flex',
-//                           alignItems: 'center',
-//                           justifyContent: 'center',
-//                           cursor: 'pointer',
-//                           transition: 'all 0.2s',
-//                           padding: 0
-//                         }}
-//                         onMouseEnter={(e) => {
-//                           e.currentTarget.style.opacity = '0.7';
-//                         }}
-//                         onMouseLeave={(e) => {
-//                           e.currentTarget.style.opacity = '1';
-//                         }}
-//                         title="View on map"
-//                       >
-//                         <MapPin size={28} color="#3b82f6" strokeWidth={2} />
-//                       </button>
-                      
-//                       <button
-//                         onClick={(e) => {
-//                           e.stopPropagation();
-//                           handleStreetViewClick(place);
-//                         }}
-//                         style={{
-//                           width: '32px',
-//                           height: '32px',
-//                           border: 'none',
-//                           background: 'transparent',
-//                           display: 'flex',
-//                           alignItems: 'center',
-//                           justifyContent: 'center',
-//                           cursor: 'pointer',
-//                           transition: 'all 0.2s',
-//                           padding: 0
-//                         }}
-//                         onMouseEnter={(e) => {
-//                           e.currentTarget.style.opacity = '0.7';
-//                         }}
-//                         onMouseLeave={(e) => {
-//                           e.currentTarget.style.opacity = '1';
-//                         }}
-//                         title="View Street View"
-//                       >
-//                         <span style={{ fontSize: '1.75rem' }}>🚶</span>
-//                       </button>
-//                     </div>
-//                   </div>
-//                 ))}
-//               </div>
-
-//               {/* Map or Street View - 50% width */}
-//               <div style={{
-//                 width: '50%',
-//                 position: 'relative'
-//               }}>
-//                 <div 
-//                   ref={mapRef}
-//                   style={{
-//                     width: '100%',
-//                     height: '100%'
-//                   }}
-//                 />
-
-//                 {/* Back to Map Button */}
-//                 {showStreetView && (
-//                   <button
-//                     onClick={handleBackToMap}
-//                     style={{
-//                       position: 'absolute',
-//                       top: '1.5rem',
-//                       left: '1.5rem',
-//                       background: 'white',
-//                       padding: '0.75rem 1.25rem',
-//                       borderRadius: '10px',
-//                       border: 'none',
-//                       boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-//                       display: 'flex',
-//                       alignItems: 'center',
-//                       gap: '0.5rem',
-//                       cursor: 'pointer',
-//                       fontSize: '0.9rem',
-//                       fontWeight: '600',
-//                       color: '#1f2937',
-//                       transition: 'all 0.2s',
-//                       zIndex: 10
-//                     }}
-//                     onMouseEnter={(e) => {
-//                       e.currentTarget.style.background = '#f3f4f6';
-//                     }}
-//                     onMouseLeave={(e) => {
-//                       e.currentTarget.style.background = 'white';
-//                     }}
-//                   >
-//                     <ChevronLeft size={18} />
-//                     <span>Back to Map</span>
-//                   </button>
-//                 )}
-
-//                 {/* Street View Info Banner */}
-//                 {showStreetView && streetViewPlace && (
-//                   <div style={{
-//                     position: 'absolute',
-//                     top: '1.5rem',
-//                     right: '1.5rem',
-//                     background: 'white',
-//                     padding: '1rem 1.25rem',
-//                     borderRadius: '12px',
-//                     boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-//                     maxWidth: '300px',
-//                     zIndex: 10
-//                   }}>
-//                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
-//                       <span style={{ fontSize: '1.2rem' }}>🚶</span>
-//                       <span style={{ fontWeight: '700', color: '#1f2937', fontSize: '0.95rem' }}>
-//                         Street View
-//                       </span>
-//                     </div>
-//                     <p style={{ 
-//                       fontSize: '0.85rem', 
-//                       color: '#6b7280', 
-//                       margin: 0,
-//                       lineHeight: '1.4'
-//                     }}>
-//                       {streetViewPlace.name}
-//                     </p>
-//                   </div>
-//                 )}
-
-//                 {/* Directions Info */}
-//                 {!showStreetView && selectedPlace && directions && (
-//                   <div style={{
-//                     position: 'absolute',
-//                     top: '1.5rem',
-//                     left: '1.5rem',
-//                     background: 'white',
-//                     padding: '1rem 1.25rem',
-//                     borderRadius: '12px',
-//                     boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-//                     display: 'flex',
-//                     gap: '1.5rem'
-//                   }}>
-//                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-//                       <Navigation size={16} color="#10b981" />
-//                       <span style={{ fontWeight: '600', color: '#1f2937', fontSize: '0.9rem' }}>
-//                         {directions.distance.text}
-//                       </span>
-//                     </div>
-//                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-//                       <span style={{ fontSize: '0.9rem' }}>🕐</span>
-//                       <span style={{ fontWeight: '600', color: '#1f2937', fontSize: '0.9rem' }}>
-//                         {directions.duration.text}
-//                       </span>
-//                     </div>
-//                   </div>
-//                 )}
-//               </div>
-//             </>
-//           ) : !loading && !showMap ? (
-//             <div style={{
-//               flex: 1,
-//               display: 'flex',
-//               alignItems: 'center',
-//               justifyContent: 'center',
-//               flexDirection: 'column',
-//               color: '#6b7280',
-//               background: '#fafafa'
-//             }}>
-//               <MapPin size={64} color="#d1d5db" style={{ marginBottom: '1rem' }} />
-//               <p style={{ fontSize: '1.1rem', fontWeight: '600', marginBottom: '0.5rem', margin: 0 }}>
-//                 Loading your location...
-//               </p>
-//               <p style={{ fontSize: '0.9rem', margin: '0.5rem 0 0 0' }}>
-//                 Apartment location will appear shortly
-//               </p>
-//             </div>
-//           ) : loading ? (
-//             <div style={{
-//               flex: 1,
-//               display: 'flex',
-//               alignItems: 'center',
-//               justifyContent: 'center',
-//               flexDirection: 'column',
-//               color: '#6b7280',
-//               background: '#fafafa'
-//             }}>
-//               <Loader2 size={48} color="#10b981" style={{ animation: 'spin 1s linear infinite', marginBottom: '1rem' }} />
-//               <p style={{ fontSize: '1rem', fontWeight: '500' }}>
-//                 Loading nearby places...
-//               </p>
-//             </div>
-//           ) : null}
-//         </div>
-//       </div>
-
-//       <style>{`
-//         @keyframes fadeIn {
-//           from { opacity: 0; }
-//           to { opacity: 1; }
-//         }
-        
-//         @keyframes slideUp {
-//           from { transform: translateY(100%); }
-//           to { transform: translateY(0); }
-//         }
-
-//         @keyframes spin {
-//           from { transform: rotate(0deg); }
-//           to { transform: rotate(360deg); }
-//         }
-//       `}</style>
-//     </>
-//   );
-// };
-
-// export default VirtualTour;
-
 import React, { useState, useEffect, useRef } from 'react';
-import { MapPin, Navigation, Star, Search, Loader2, AlertCircle, X } from 'lucide-react';
-import { 
-  Utensils, 
-  GraduationCap, 
-  Trees, 
-  Cross, 
-  Bus, 
-  ShoppingCart, 
-  Dumbbell 
-} from 'lucide-react';
+import { MapPin, Navigation, Star, Search, Loader2, AlertCircle, X, ChevronLeft } from 'lucide-react';
+import { Utensils, GraduationCap, Trees, Cross, Bus, ShoppingCart, Dumbbell } from 'lucide-react';
 
 const categories = [
-  { id: 'dining', label: 'Dining', icon: 'Utensils' },
-  { id: 'education', label: 'Education', icon: 'GraduationCap' },
-  { id: 'nature', label: 'Nature', icon: 'Trees' },
-  { id: 'health', label: 'Health', icon: 'Cross' },
-  { id: 'transport', label: 'Transport', icon: 'Bus' },
-  { id: 'shop', label: 'Shop', icon: 'ShoppingCart' },
-  { id: 'gym', label: 'Gym', icon: 'Dumbbell' }
+  { id: 'dining',     label: 'Dining',     icon: 'Utensils'      },
+  { id: 'education',  label: 'Education',  icon: 'GraduationCap' },
+  { id: 'nature',     label: 'Nature',     icon: 'Trees'         },
+  { id: 'health',     label: 'Health',     icon: 'Cross'         },
+  { id: 'transport',  label: 'Transport',  icon: 'Bus'           },
+  { id: 'shop',       label: 'Shop',       icon: 'ShoppingCart'  },
+  { id: 'gym',        label: 'Gym',        icon: 'Dumbbell'      }
 ];
 
-const IconMap = {
-  Utensils,
-  GraduationCap,
-  Trees,
-  Cross,
-  Bus,
-  ShoppingCart,
-  Dumbbell
-};
+const IconMap = { Utensils, GraduationCap, Trees, Cross, Bus, ShoppingCart, Dumbbell };
 
 const BACKEND_URL = 'https://interior-backend-production.up.railway.app';
 const GOOGLE_MAPS_API_KEY = 'AIzaSyAfDoI98BjfukXxFsnXB8qQJPK_0Bi7ntI';
-
-const APARTMENT_COORDINATES = {
-  lat: 25.0694755,
-  lng: 55.1468862,
-  name: 'VERDE BY SOBHA'
-};
-
+const APARTMENT_COORDINATES = { lat: 25.0694755, lng: 55.1468862, name: 'VERDE BY SOBHA' };
 const SEARCH_RADIUS = 5000;
 
 const searchVirtualTour = async (location, category, radius = SEARCH_RADIUS, isCustomSearch = false) => {
-  try {
-    const response = await fetch(`${BACKEND_URL}/api/virtual-tour/search`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        location: location || `${APARTMENT_COORDINATES.lat},${APARTMENT_COORDINATES.lng}`,
-        category,
-        radius,
-        is_custom_search: isCustomSearch
-      })
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.error || 'Search failed');
-    }
-
-    return await response.json();
-  } catch (error) {
-    throw error;
-  }
+  const response = await fetch(`${BACKEND_URL}/api/virtual-tour/search`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ location: location || `${APARTMENT_COORDINATES.lat},${APARTMENT_COORDINATES.lng}`, category, radius, is_custom_search: isCustomSearch })
+  });
+  if (!response.ok) { const e = await response.json(); throw new Error(e.error || 'Search failed'); }
+  return await response.json();
 };
 
 const getDirections = async (origin, destination, mode = 'driving') => {
-  try {
-    const response = await fetch(`${BACKEND_URL}/api/virtual-tour/directions`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        origin,
-        destination,
-        mode
-      })
-    });
-
-    if (!response.ok) {
-      throw new Error('Directions fetch failed');
-    }
-
-    return await response.json();
-  } catch (error) {
-    throw error;
-  }
+  const response = await fetch(`${BACKEND_URL}/api/virtual-tour/directions`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ origin, destination, mode })
+  });
+  if (!response.ok) throw new Error('Directions fetch failed');
+  return await response.json();
 };
 
-const VirtualTour = ({ onBack, isEmbedded = false }) => {
+// ─── CHANGE 1: Accept initialCategory prop (defaults to 'dining') ─────────────
+const VirtualTour = ({ onBack, isEmbedded = false, initialPlace = null, initialMode = 'map', initialCategory = 'dining' }) => {
   const [searchLocation, setSearchLocation] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('dining');
+  // ─── CHANGE 2: Use initialCategory as the starting selected category ─────────
+  const [selectedCategory, setSelectedCategory] = useState(initialCategory);
   const [places, setPlaces] = useState([]);
   const [loading, setLoading] = useState(false);
   const [origin, setOrigin] = useState(null);
@@ -1296,716 +52,319 @@ const VirtualTour = ({ onBack, isEmbedded = false }) => {
   const [error, setError] = useState('');
   const [showMap, setShowMap] = useState(false);
   const [mapLoaded, setMapLoaded] = useState(false);
+  const [isCustomSearch, setIsCustomSearch] = useState(false);
   const [showStreetView, setShowStreetView] = useState(false);
   const [streetViewPlace, setStreetViewPlace] = useState(null);
-  const [isCustomSearch, setIsCustomSearch] = useState(false);
-  
+  // track if we've handled the initial prop so it only fires once
+  const initialHandled = useRef(false);
+
   const mapRef = useRef(null);
   const googleMapRef = useRef(null);
   const markersRef = useRef([]);
   const directionsRendererRef = useRef(null);
+  const streetViewRef = useRef(null);
 
   useEffect(() => {
     if (!window.google) {
       const script = document.createElement('script');
       script.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_API_KEY}&libraries=places`;
-      script.async = true;
-      script.defer = true;
+      script.async = true; script.defer = true;
       script.onload = () => setMapLoaded(true);
       document.head.appendChild(script);
-    } else {
-      setMapLoaded(true);
-    }
+    } else { setMapLoaded(true); }
   }, []);
 
+  // ─── CHANGE 3: autoLoadApartment now uses initialCategory instead of hardcoded 'dining' ───
+  useEffect(() => { if (mapLoaded) autoLoadApartment(); }, [mapLoaded]);
+
+  // Once map is loaded + places are set, if we have an initialPlace open it
   useEffect(() => {
-    if (mapLoaded) {
-      autoLoadApartment();
+    if (!mapLoaded || initialHandled.current || !initialPlace) return;
+    if (places.length === 0) return; // wait for places to load first
+    initialHandled.current = true;
+    setSelectedPlace(initialPlace);
+    if (initialMode === 'streetview') {
+      setShowStreetView(true);
+      setStreetViewPlace(initialPlace);
+      setShowMap(false);
+    } else {
+      setShowStreetView(false);
+      handlePlaceClick(initialPlace);
     }
-  }, [mapLoaded]);
+  }, [mapLoaded, places, initialPlace, initialMode]);
 
   useEffect(() => {
-    if (showMap && origin && places.length > 0 && mapLoaded && mapRef.current) {
-      const timer = setTimeout(() => {
-        initializeMap();
-      }, 100);
-      return () => clearTimeout(timer);
+    if (showMap && !showStreetView && origin && places.length > 0 && mapLoaded && mapRef.current) {
+      const t = setTimeout(() => initializeMap(), 100);
+      return () => clearTimeout(t);
     }
-  }, [showMap, origin, places, mapLoaded]);
+  }, [showMap, origin, places, mapLoaded, showStreetView]);
 
   useEffect(() => {
-    if (directions && googleMapRef.current && window.google) {
-      displayDirections();
+    if (showStreetView && streetViewPlace && mapLoaded && mapRef.current) {
+      const t = setTimeout(() => initializeStreetView(streetViewPlace), 100);
+      return () => clearTimeout(t);
     }
-  }, [directions]);
+  }, [showStreetView, streetViewPlace, mapLoaded]);
+
+  useEffect(() => { if (directions && googleMapRef.current && window.google) displayDirections(); }, [directions]);
 
   const autoLoadApartment = async () => {
-    setLoading(true);
-    setError('');
-    
-    setOrigin({
-      lat: APARTMENT_COORDINATES.lat,
-      lng: APARTMENT_COORDINATES.lng,
-      name: APARTMENT_COORDINATES.name
-    });
-    
-    const apartmentLocation = `${APARTMENT_COORDINATES.lat},${APARTMENT_COORDINATES.lng}`;
-    
+    setLoading(true); setError('');
+    const apOrigin = { lat: APARTMENT_COORDINATES.lat, lng: APARTMENT_COORDINATES.lng, name: APARTMENT_COORDINATES.name };
+    setOrigin(apOrigin);
     try {
-      const result = await searchVirtualTour(apartmentLocation, 'dining', SEARCH_RADIUS, false);
-      
-      if (!result.success) {
-        throw new Error(result.error || 'Search failed');
+      // ─── CHANGE 4: Use initialCategory to load the correct section on open ───
+      const cat = initialCategory;
+      const result = await searchVirtualTour(`${APARTMENT_COORDINATES.lat},${APARTMENT_COORDINATES.lng}`, cat, SEARCH_RADIUS, false);
+      if (!result.success) throw new Error(result.error || 'Search failed');
+      let loadedPlaces = result.places || [];
+      // If initialPlace not in list, prepend it so it's always visible
+      if (initialPlace && !loadedPlaces.find(p => p.id === initialPlace.id)) {
+        loadedPlaces = [initialPlace, ...loadedPlaces];
       }
-      
-      if (!result.places || result.places.length === 0) {
-        setError(`No dining places found within 5km.`);
-        setLoading(false);
-        setShowMap(true);
-        return;
-      }
-      
-      setPlaces(result.places);
-      setOrigin({
-        lat: APARTMENT_COORDINATES.lat,
-        lng: APARTMENT_COORDINATES.lng,
-        name: APARTMENT_COORDINATES.name
-      });
-      
-      setShowMap(true);
-      setLoading(false);
-      
-    } catch (err) {
-      setError(err.message || 'Failed to load.');
-      setLoading(false);
-      setShowMap(true);
-    }
+      if (loadedPlaces.length === 0) { setError('No places found within 5km.'); setShowMap(true); }
+      else { setPlaces(loadedPlaces); setShowMap(true); }
+    } catch (err) { setError(err.message || 'Failed to load.'); setShowMap(true); }
+    setLoading(false);
   };
 
   const initializeMap = () => {
     if (!window.google || !mapRef.current) return;
-
     try {
-      let initialZoom = places.length === 1 ? 15 : places.length <= 5 ? 13 : 12;
+      const centerCoords = (initialPlace && !initialHandled.current === false)
+        ? { lat: initialPlace.coordinates.lat, lng: initialPlace.coordinates.lng }
+        : { lat: origin.lat, lng: origin.lng };
 
       const map = new window.google.maps.Map(mapRef.current, {
-        center: { lat: origin.lat, lng: origin.lng },
-        zoom: initialZoom,
-        styles: [
-          {
-            featureType: 'poi',
-            elementType: 'labels',
-            stylers: [{ visibility: 'off' }]
-          }
-        ]
+        center: centerCoords,
+        zoom: places.length === 1 ? 15 : places.length <= 5 ? 13 : 12,
+        styles: [{ featureType: 'poi', elementType: 'labels', stylers: [{ visibility: 'off' }] }]
       });
-
       googleMapRef.current = map;
-
-      markersRef.current.forEach(marker => marker.setMap(null));
+      markersRef.current.forEach(m => m.setMap(null));
       markersRef.current = [];
-
-      const originMarker = new window.google.maps.Marker({
-        position: { lat: origin.lat, lng: origin.lng },
-        map: map,
-        title: origin.name || 'Your Location',
-        icon: {
-          path: window.google.maps.SymbolPath.CIRCLE,
-          scale: 10,
-          fillColor: '#10b981',
-          fillOpacity: 1,
-          strokeColor: 'white',
-          strokeWeight: 3,
-        },
-      });
+      const originMarker = new window.google.maps.Marker({ position: { lat: origin.lat, lng: origin.lng }, map, title: origin.name, icon: { path: window.google.maps.SymbolPath.CIRCLE, scale: 10, fillColor: '#10b981', fillOpacity: 1, strokeColor: 'white', strokeWeight: 3 } });
       markersRef.current.push(originMarker);
-
       places.forEach((place, index) => {
-        const marker = new window.google.maps.Marker({
-          position: { lat: place.coordinates.lat, lng: place.coordinates.lng },
-          map: map,
-          title: place.name,
-          label: isCustomSearch ? undefined : {
-            text: `${index + 1}`,
-            color: 'white',
-            fontSize: '12px',
-            fontWeight: 'bold',
-          },
-          icon: {
-            path: window.google.maps.SymbolPath.CIRCLE,
-            scale: isCustomSearch ? 18 : 15,
-            fillColor: isCustomSearch ? '#ef4444' : '#3b82f6',
-            fillOpacity: 1,
-            strokeColor: 'white',
-            strokeWeight: 2,
-          },
-        });
-
-        marker.addListener('click', () => {
-          handlePlaceClick(place);
-        });
-
+        const marker = new window.google.maps.Marker({ position: { lat: place.coordinates.lat, lng: place.coordinates.lng }, map, title: place.name, label: isCustomSearch ? undefined : { text: `${index + 1}`, color: 'white', fontSize: '12px', fontWeight: 'bold' }, icon: { path: window.google.maps.SymbolPath.CIRCLE, scale: isCustomSearch ? 18 : 15, fillColor: isCustomSearch ? '#ef4444' : '#3b82f6', fillOpacity: 1, strokeColor: 'white', strokeWeight: 2 } });
+        marker.addListener('click', () => handlePlaceClick(place));
         markersRef.current.push(marker);
       });
-
       setTimeout(() => {
         const bounds = new window.google.maps.LatLngBounds();
         bounds.extend({ lat: origin.lat, lng: origin.lng });
-        
-        places.forEach(place => {
-          bounds.extend({ lat: place.coordinates.lat, lng: place.coordinates.lng });
-        });
-        
-        map.fitBounds(bounds, {
-          top: 50,
-          right: 50,
-          bottom: 50,
-          left: 50
-        });
+        places.forEach(p => bounds.extend({ lat: p.coordinates.lat, lng: p.coordinates.lng }));
+        map.fitBounds(bounds, { top: 50, right: 50, bottom: 50, left: 50 });
       }, 300);
-      
-    } catch (error) {
-      console.error('Error initializing map:', error);
-    }
+    } catch (e) { console.error('Map init error:', e); }
+  };
+
+  const initializeStreetView = (place) => {
+    if (!window.google || !mapRef.current) return;
+    try {
+      const streetViewService = new window.google.maps.StreetViewService();
+      const location = { lat: place.coordinates.lat, lng: place.coordinates.lng };
+      streetViewService.getPanorama({ location, radius: 50 }, (data, status) => {
+        if (status === 'OK') {
+          const panorama = new window.google.maps.StreetViewPanorama(mapRef.current, {
+            position: location, pov: { heading: 165, pitch: 0 }, zoom: 1,
+            addressControl: true, enableCloseButton: false, fullscreenControl: true,
+          });
+          streetViewRef.current = panorama;
+        } else {
+          alert('Street View is not available at this location.');
+          setShowStreetView(false);
+          setShowMap(true);
+        }
+      });
+    } catch (e) { console.error('Street View error:', e); setShowStreetView(false); }
   };
 
   const displayDirections = () => {
     if (!googleMapRef.current || !window.google || !selectedPlace) return;
-
-    if (directionsRendererRef.current) {
-      directionsRendererRef.current.setMap(null);
-    }
-
-    const directionsRenderer = new window.google.maps.DirectionsRenderer({
-      map: googleMapRef.current,
-      suppressMarkers: true,
-      polylineOptions: {
-        strokeColor: '#9333ea',
-        strokeWeight: 4,
-      },
-    });
-
-    directionsRendererRef.current = directionsRenderer;
-
-    const directionsService = new window.google.maps.DirectionsService();
-    directionsService.route(
-      {
-        origin: { lat: origin.lat, lng: origin.lng },
-        destination: { lat: selectedPlace.coordinates.lat, lng: selectedPlace.coordinates.lng },
-        travelMode: window.google.maps.TravelMode.DRIVING,
-      },
-      (result, status) => {
-        if (status === 'OK') {
-          directionsRenderer.setDirections(result);
-        }
-      }
-    );
-  };
-
-  const handleKeyPress = (e) => {
-    if (e.key === 'Enter' && !loading) {
-      e.preventDefault();
-      searchNearbyPlaces();
-    }
+    if (directionsRendererRef.current) directionsRendererRef.current.setMap(null);
+    const renderer = new window.google.maps.DirectionsRenderer({ map: googleMapRef.current, suppressMarkers: true, polylineOptions: { strokeColor: '#9333ea', strokeWeight: 4 } });
+    directionsRendererRef.current = renderer;
+    const svc = new window.google.maps.DirectionsService();
+    svc.route({ origin: { lat: origin.lat, lng: origin.lng }, destination: { lat: selectedPlace.coordinates.lat, lng: selectedPlace.coordinates.lng }, travelMode: window.google.maps.TravelMode.DRIVING }, (result, status) => { if (status === 'OK') renderer.setDirections(result); });
   };
 
   const searchNearbyPlaces = async () => {
-    if (!searchLocation.trim()) {
-      setError('Please enter a location');
-      return;
-    }
-
-    setLoading(true);
-    setError('');
-    setSelectedPlace(null);
-    setDirections(null);
-    setIsCustomSearch(true);
-    
+    if (!searchLocation.trim()) { setError('Please enter a location'); return; }
+    setLoading(true); setError(''); setSelectedPlace(null); setDirections(null); setIsCustomSearch(true); setShowStreetView(false);
     try {
       const result = await searchVirtualTour(searchLocation, selectedCategory, SEARCH_RADIUS, true);
-      
-      if (!result.success) {
-        throw new Error(result.error || 'Search failed');
-      }
-      
-      if (!result.places || result.places.length === 0) {
-        setError(`No ${selectedCategory} places found.`);
-        setLoading(false);
-        setShowMap(false);
-        return;
-      }
-      
-      setPlaces(result.places);
-      setOrigin({
-        lat: APARTMENT_COORDINATES.lat,
-        lng: APARTMENT_COORDINATES.lng,
-        name: APARTMENT_COORDINATES.name
-      });
-      
-      setShowMap(true);
-      setLoading(false);
-      
-    } catch (err) {
-      setError(err.message || 'Failed to search.');
-      setLoading(false);
-      setShowMap(false);
-    }
+      if (!result.success) throw new Error(result.error || 'Search failed');
+      if (!result.places || result.places.length === 0) { setError(`No ${selectedCategory} places found.`); setShowMap(false); }
+      else { setPlaces(result.places); setOrigin({ lat: APARTMENT_COORDINATES.lat, lng: APARTMENT_COORDINATES.lng, name: APARTMENT_COORDINATES.name }); setShowMap(true); }
+    } catch (err) { setError(err.message || 'Failed to search.'); setShowMap(false); }
+    setLoading(false);
   };
 
   const handlePlaceClick = async (place) => {
     setSelectedPlace(place);
-    
+    setShowStreetView(false);
     if (origin) {
       try {
-        const originStr = `${origin.lat},${origin.lng}`;
-        const destStr = `${place.coordinates.lat},${place.coordinates.lng}`;
-        
-        const result = await getDirections(originStr, destStr, 'driving');
-        
-        if (result.success) {
-          setDirections(result.directions);
-        }
-      } catch (err) {
-        setDirections({
-          distance: { text: `${place.distance} km` },
-          duration: { text: `${Math.floor(place.distance * 3)} mins` }
-        });
-      }
+        const result = await getDirections(`${origin.lat},${origin.lng}`, `${place.coordinates.lat},${place.coordinates.lng}`, 'driving');
+        if (result.success) setDirections(result.directions);
+      } catch { setDirections({ distance: { text: `${place.distance} km` }, duration: { text: `${Math.floor(place.distance * 3)} mins` } }); }
     }
   };
 
+  const handleStreetViewClick = (place) => {
+    setStreetViewPlace(place);
+    setShowStreetView(true);
+    setShowMap(false);
+  };
+
+  const handleBackToMap = () => {
+    setShowStreetView(false);
+    setStreetViewPlace(null);
+    setShowMap(true);
+  };
+
   const handleCategoryChange = (categoryId) => {
-    setSelectedCategory(categoryId);
-    setSelectedPlace(null);
-    setDirections(null);
-    setSearchLocation('');
-    setIsCustomSearch(false);
-    
-    setOrigin({
-      lat: APARTMENT_COORDINATES.lat,
-      lng: APARTMENT_COORDINATES.lng,
-      name: APARTMENT_COORDINATES.name
-    });
-    
-    setLoading(true);
-    setError('');
-    
-    const apartmentLocation = `${APARTMENT_COORDINATES.lat},${APARTMENT_COORDINATES.lng}`;
-    
-    searchVirtualTour(apartmentLocation, categoryId, SEARCH_RADIUS, false)
+    setSelectedCategory(categoryId); setSelectedPlace(null); setDirections(null); setSearchLocation(''); setIsCustomSearch(false); setShowStreetView(false);
+    setOrigin({ lat: APARTMENT_COORDINATES.lat, lng: APARTMENT_COORDINATES.lng, name: APARTMENT_COORDINATES.name });
+    setLoading(true); setError('');
+    searchVirtualTour(`${APARTMENT_COORDINATES.lat},${APARTMENT_COORDINATES.lng}`, categoryId, SEARCH_RADIUS, false)
       .then(result => {
-        if (result.success && result.places && result.places.length > 0) {
-          setPlaces(result.places);
-          setOrigin({
-            lat: APARTMENT_COORDINATES.lat,
-            lng: APARTMENT_COORDINATES.lng,
-            name: APARTMENT_COORDINATES.name
-          });
-          setShowMap(true);
-        } else {
-          setError(`No ${categoryId} places found`);
-          setPlaces([]);
-        }
+        if (result.success && result.places?.length > 0) { setPlaces(result.places); setShowMap(true); }
+        else { setError(`No ${categoryId} places found`); setPlaces([]); }
         setLoading(false);
       })
-      .catch(err => {
-        setError(err.message || 'Failed to load places');
-        setLoading(false);
-      });
+      .catch(err => { setError(err.message || 'Failed'); setLoading(false); });
   };
 
-  const getCategoryIcon = (iconName) => {
-    const IconComponent = IconMap[iconName];
-    return IconComponent ? <IconComponent size={16} strokeWidth={2} /> : null;
-  };
+  const getCategoryIcon = (iconName) => { const I = IconMap[iconName]; return I ? <I size={16} strokeWidth={2} /> : null; };
 
   return (
-    <div style={{
-      width: '100%',
-      height: '100%',
-      background: 'white',
-      display: 'flex',
-      flexDirection: 'column',
-      overflow: 'hidden'
-    }}>
-      {/* Header */}
-      <div style={{
-        padding: '1rem 1.5rem',
-        borderBottom: '1px solid #e5e7eb',
-        background: 'white',
-        flexShrink: 0,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between'
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-          <MapPin size={28} color="#3b82f6" strokeWidth={2} />
-          <h1 style={{
-            fontSize: '1.75rem',
-            fontWeight: '700',
-            margin: 0,
-            color: '#1f2937'
-          }}>
-            Virtual Tour
-          </h1>
-        </div>
-        
-        <button
-          onClick={onBack}
-          style={{
-            width: '40px',
-            height: '40px',
-            borderRadius: '50%',
-            border: '1px solid #e5e7eb',
-            background: 'white',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            transition: 'all 0.2s'
-          }}
-        >
-          <X size={20} color="#6b7280" />
+    <div style={{ width: '100%', height: '100%', background: '#eaecef', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+
+      {/* HEADER */}
+      <div style={{ padding: '0.75rem 1.5rem', background: '#eaecef', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <h1 style={{ fontSize: '1.4rem', fontWeight: '700', margin: 0, color: '#1f2937' }}>Virtual Tour</h1>
+        <button onClick={onBack} style={{ width: '36px', height: '36px', borderRadius: '50%', border: '1px solid #d1d5db', background: 'white', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <X size={18} color="#6b7280" />
         </button>
       </div>
 
-      {/* Categories + Search Row */}
-      <div style={{
-        padding: '0.75rem 1.5rem',
-        borderBottom: '1px solid #e5e7eb',
-        background: '#f5f1e8',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        gap: '1rem',
-        flexShrink: 0
-      }}>
-        {/* Categories */}
-        <div style={{
-          display: 'flex',
-          gap: '0.5rem',
-          flexWrap: 'wrap'
-        }}>
+      {/* CATEGORIES + SEARCH */}
+      <div style={{ padding: '0.5rem 1.5rem 0.75rem', background: '#eaecef', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem', flexShrink: 0 }}>
+        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
           {categories.map(cat => (
-            <button
-              key={cat.id}
-              onClick={() => handleCategoryChange(cat.id)}
-              disabled={loading}
-              style={{
-                padding: '0.5rem 1rem',
-                borderRadius: '20px',
-                border: 'none',
-                background: selectedCategory === cat.id 
-                  ? '#3b82f6'
-                  : '#f3f4f6',
-                color: selectedCategory === cat.id ? 'white' : '#374151',
-                cursor: loading ? 'not-allowed' : 'pointer',
-                transition: 'all 0.2s',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.5rem',
-                fontSize: '0.875rem',
-                fontWeight: '500',
-                opacity: loading ? 0.6 : 1
-              }}
-            >
-              {getCategoryIcon(cat.icon)}
-              <span>{cat.label}</span>
+            <button key={cat.id} onClick={() => handleCategoryChange(cat.id)} disabled={loading}
+              style={{ padding: '0.45rem 0.9rem', borderRadius: '20px', border: 'none', background: selectedCategory === cat.id ? '#3b82f6' : '#f3f4f6', color: selectedCategory === cat.id ? 'white' : '#374151', cursor: loading ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.85rem', fontWeight: '500', opacity: loading ? 0.6 : 1 }}>
+              {getCategoryIcon(cat.icon)}<span>{cat.label}</span>
             </button>
           ))}
         </div>
-
-        {/* Search Box */}
-        <div style={{ 
-          position: 'relative',
-          width: '320px'
-        }}>
-          <div
-            style={{
-              position: 'absolute',
-              left: '12px',
-              top: '50%',
-              transform: 'translateY(-50%)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              pointerEvents: 'none',
-              color: '#6b7280'
-            }}
-          >
-            {loading ? (
-              <Loader2 size={18} style={{ animation: 'spin 1s linear infinite' }} />
-            ) : (
-              <Search size={18} />
-            )}
+        <div style={{ position: 'relative', width: '280px', flexShrink: 0 }}>
+          <div style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: '#6b7280', pointerEvents: 'none' }}>
+            {loading ? <Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} /> : <Search size={16} />}
           </div>
-          
-          <input
-            type="text"
-            placeholder="Search location"
-            value={searchLocation}
-            onChange={(e) => {
-              setSearchLocation(e.target.value);
-              setError('');
-            }}
-            onKeyPress={handleKeyPress}
+          <input type="text" placeholder="Search location" value={searchLocation}
+            onChange={(e) => { setSearchLocation(e.target.value); setError(''); }}
+            onKeyPress={(e) => { if (e.key === 'Enter' && !loading) { e.preventDefault(); searchNearbyPlaces(); } }}
             disabled={loading}
-            style={{
-              width: '100%',
-              padding: '0.6rem 1rem 0.6rem 2.75rem',
-              fontSize: '0.875rem',
-              border: error ? '1.5px solid #ef4444' : '1.5px solid #e5e7eb',
-              borderRadius: '10px',
-              outline: 'none',
-              transition: 'all 0.2s',
-              background: 'white'
-            }}
+            style={{ width: '100%', padding: '0.5rem 1rem 0.5rem 2.25rem', fontSize: '0.85rem', border: error ? '1.5px solid #ef4444' : '1.5px solid #e5e7eb', borderRadius: '10px', outline: 'none', background: 'white', boxSizing: 'border-box' }}
           />
         </div>
       </div>
 
-      {/* Error Message */}
-      {error && (
-        <div style={{
-          margin: '0.5rem 1.5rem 0',
-          padding: '0.75rem 1rem',
-          background: '#fef2f2',
-          border: '1px solid #fecaca',
-          borderRadius: '8px',
-          color: '#dc2626',
-          fontSize: '0.875rem',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '0.5rem'
-        }}>
-          <AlertCircle size={16} />
-          {error}
-        </div>
-      )}
+      {error && <div style={{ margin: '0 1.5rem 0.5rem', padding: '0.65rem 1rem', background: '#fef2f2', border: '1px solid #fecaca', borderRadius: '8px', color: '#dc2626', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}><AlertCircle size={15} />{error}</div>}
 
-      {/* Main Content: Places List + Map */}
-      <div style={{
-        flex: 1,
-        display: 'flex',
-        overflow: 'hidden',
-        background: '#f5f1e8'
-      }}>
-          
-        {(showMap) && places.length > 0 ? (
+      {/* MAIN CONTENT */}
+      <div style={{ flex: 1, display: 'flex', overflow: 'hidden', background: '#eaecef', gap: '0.75rem', padding: '0 1rem 1rem' }}>
+        {(showMap || showStreetView) && places.length > 0 ? (
           <>
-            {/* Places List - 50% width */}
-            <div style={{
-              width: '50%',
-              background: '#f5f1e8',
-              borderRight: '1px solid #e5e7eb',
-              overflowY: 'auto',
-              padding: '1rem'
-            }}>
-              <h3 style={{
-                fontSize: '0.95rem',
-                fontWeight: '700',
-                marginBottom: '0.75rem',
-                color: '#1f2937',
-                padding: '0 0.5rem'
-              }}>
-                {places.length} {selectedCategory} places found
-              </h3>
-
+            {/* Places List */}
+            <div style={{ width: '45%', background: 'white', borderRadius: '12px', overflowY: 'auto', padding: '0.75rem', flexShrink: 0 }}>
+              <h3 style={{ fontSize: '0.9rem', fontWeight: '700', margin: '0 0 0.65rem 0.25rem', color: '#1f2937' }}>{places.length} {selectedCategory} places found</h3>
               {places.map((place) => (
-                <div
-                  key={place.id}
-                  style={{
-                    background: selectedPlace?.id === place.id ? '#f0fdf4' : 'white',
-                    border: selectedPlace?.id === place.id 
-                      ? '2px solid #10b981' 
-                      : '1px solid #e5e7eb',
-                    borderRadius: '12px',
-                    padding: '1rem',
-                    marginBottom: '0.75rem',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s',
-                    display: 'flex',
-                    gap: '1rem',
-                    alignItems: 'flex-start'
-                  }}
-                  onClick={() => handlePlaceClick(place)}
-                >
+                <div key={place.id} onClick={() => handlePlaceClick(place)}
+                  style={{ background: selectedPlace?.id === place.id ? '#f0fdf4' : 'white', border: selectedPlace?.id === place.id ? '2px solid #10b981' : '1px solid #e5e7eb', borderRadius: '10px', padding: '0.75rem', marginBottom: '0.6rem', cursor: 'pointer', display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+
                   {/* Photo */}
                   {place.photo_url ? (
-                    <img
-                      src={place.photo_url}
-                      alt={place.name}
-                      style={{
-                        width: '100px',
-                        height: '100px',
-                        objectFit: 'cover',
-                        borderRadius: '10px',
-                        flexShrink: 0
-                      }}
-                    />
+                    <img src={place.photo_url} alt={place.name} style={{ width: '75px', height: '75px', objectFit: 'cover', borderRadius: '8px', flexShrink: 0 }} />
                   ) : (
-                    <div style={{
-                      width: '100px',
-                      height: '100px',
-                      background: '#f3f4f6',
-                      borderRadius: '10px',
-                      flexShrink: 0,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center'
-                    }}>
-                      {getCategoryIcon(categories.find(c => c.id === selectedCategory)?.icon)}
-                    </div>
+                    <div style={{ width: '75px', height: '75px', background: '#f3f4f6', borderRadius: '8px', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{getCategoryIcon(categories.find(c => c.id === selectedCategory)?.icon)}</div>
                   )}
-                  
-                  {/* Content */}
+
+                  {/* Info */}
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <h4 style={{
-                      fontSize: '1.05rem',
-                      fontWeight: '600',
-                      margin: '0 0 0.75rem 0',
-                      color: '#1f2937'
-                    }}>
-                      {place.name}
-                    </h4>
-
-                    <div style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '0.5rem',
-                      flexWrap: 'wrap'
-                    }}>
-                      <div style={{
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: '0.35rem',
-                        padding: '0.35rem 0.75rem',
-                        background: '#f3f4f6',
-                        borderRadius: '20px',
-                        fontSize: '0.8rem',
-                        color: '#374151',
-                        fontWeight: '500'
-                      }}>
-                        <Navigation size={13} strokeWidth={2.5} />
-                        <span>~{place.distance}km</span>
+                    <h4 style={{ fontSize: '0.95rem', fontWeight: '600', margin: '0 0 0.45rem 0', color: '#1f2937' }}>{place.name}</h4>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap' }}>
+                      <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.3rem', padding: '0.25rem 0.6rem', background: '#f3f4f6', borderRadius: '20px', fontSize: '0.75rem', color: '#374151', fontWeight: '500' }}>
+                        <Navigation size={12} strokeWidth={2.5} /><span>~{place.distance}km</span>
                       </div>
-
                       {place.rating && (
-                        <div style={{
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: '0.35rem',
-                          padding: '0.35rem 0.75rem',
-                          background: '#fef3c7',
-                          borderRadius: '20px',
-                          fontSize: '0.8rem',
-                          color: '#92400e',
-                          fontWeight: '600'
-                        }}>
-                          <Star size={13} fill="#fbbf24" color="#fbbf24" strokeWidth={0} />
-                          <span>{place.rating}</span>
+                        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.3rem', padding: '0.25rem 0.6rem', background: '#fef3c7', borderRadius: '20px', fontSize: '0.75rem', color: '#92400e', fontWeight: '600' }}>
+                          <Star size={12} fill="#fbbf24" color="#fbbf24" strokeWidth={0} /><span>{place.rating}</span>
                         </div>
                       )}
                     </div>
+                    {place.address && <p style={{ fontSize: '0.72rem', color: '#9ca3af', margin: '0.35rem 0 0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{place.address}</p>}
+                  </div>
 
-                    {place.address && (
-                      <p style={{
-                        fontSize: '0.75rem',
-                        color: '#9ca3af',
-                        margin: '0.65rem 0 0 0',
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        whiteSpace: 'nowrap'
-                      }}>
-                        {place.address}
-                      </p>
-                    )}
+                  {/* Action icons */}
+                  <div style={{ display: 'flex', flexDirection: 'row', gap: '0.6rem', flexShrink: 0, alignItems: 'center' }}>
+                    <button onClick={(e) => { e.stopPropagation(); handlePlaceClick(place); }}
+                      style={{ width: '32px', height: '32px', border: 'none', background: 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', padding: 0 }}
+                      title="View on map">
+                      <MapPin size={24} color="#3b82f6" strokeWidth={2} />
+                    </button>
+                    <button onClick={(e) => { e.stopPropagation(); handleStreetViewClick(place); }}
+                      style={{ width: '32px', height: '32px', border: 'none', background: 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', padding: 0 }}
+                      title="Street View">
+                      <svg width="24" height="24" viewBox="0 0 24 24" fill="#f97316" xmlns="http://www.w3.org/2000/svg">
+                        <circle cx="12" cy="5" r="2" fill="#f97316"/>
+                        <path d="M12 8c-1.5 0-3 .8-3.5 2L7 13h2l1-2v3l-2 5h2l1-3 1 3h2l-2-5v-3l1 2h2l-1.5-3C14 8.8 13.5 8 12 8z" fill="#f97316"/>
+                      </svg>
+                    </button>
                   </div>
                 </div>
               ))}
             </div>
 
-            {/* Map - 50% width */}
-            <div style={{
-              width: '50%',
-              position: 'relative'
-            }}>
-              <div 
-                ref={mapRef}
-                style={{
-                  width: '100%',
-                  height: '100%'
-                }}
-              />
+            {/* Map / Street View */}
+            <div style={{ flex: 1, borderRadius: '12px', overflow: 'hidden', position: 'relative' }}>
+              <div ref={mapRef} style={{ width: '100%', height: '100%' }} />
 
-              {/* Directions Info */}
-              {selectedPlace && directions && (
-                <div style={{
-                  position: 'absolute',
-                  top: '1.5rem',
-                  left: '1.5rem',
-                  background: 'white',
-                  padding: '1rem 1.25rem',
-                  borderRadius: '12px',
-                  boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-                  display: 'flex',
-                  gap: '1.5rem'
-                }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <Navigation size={16} color="#10b981" />
-                    <span style={{ fontWeight: '600', color: '#1f2937', fontSize: '0.9rem' }}>
-                      {directions.distance.text}
-                    </span>
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <span style={{ fontSize: '0.9rem' }}>🕐</span>
-                    <span style={{ fontWeight: '600', color: '#1f2937', fontSize: '0.9rem' }}>
-                      {directions.duration.text}
-                    </span>
-                  </div>
+              {/* Back to map button when in street view */}
+              {showStreetView && (
+                <button onClick={handleBackToMap}
+                  style={{ position: 'absolute', top: '1rem', left: '1rem', background: 'white', padding: '0.6rem 1rem', borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.15)', display: 'flex', alignItems: 'center', gap: '0.4rem', cursor: 'pointer', fontSize: '0.85rem', fontWeight: '600', color: '#1f2937', zIndex: 10 }}>
+                  <ChevronLeft size={16} /><span>Back to Map</span>
+                </button>
+              )}
+
+              {/* Directions overlay */}
+              {!showStreetView && selectedPlace && directions && (
+                <div style={{ position: 'absolute', top: '1rem', left: '1rem', background: 'white', padding: '0.75rem 1rem', borderRadius: '10px', boxShadow: '0 4px 12px rgba(0,0,0,0.15)', display: 'flex', gap: '1rem' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}><Navigation size={14} color="#10b981" /><span style={{ fontWeight: '600', color: '#1f2937', fontSize: '0.85rem' }}>{directions.distance.text}</span></div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}><span style={{ fontSize: '0.85rem' }}>🕐</span><span style={{ fontWeight: '600', color: '#1f2937', fontSize: '0.85rem' }}>{directions.duration.text}</span></div>
                 </div>
               )}
             </div>
           </>
         ) : loading ? (
-          <div style={{
-            flex: 1,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            flexDirection: 'column',
-            color: '#6b7280',
-            background: '#fafafa'
-          }}>
-            <Loader2 size={48} color="#10b981" style={{ animation: 'spin 1s linear infinite', marginBottom: '1rem' }} />
-            <p style={{ fontSize: '1rem', fontWeight: '500' }}>
-              Loading nearby places...
-            </p>
+          <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', color: '#6b7280', background: 'white', borderRadius: '12px' }}>
+            <Loader2 size={40} color="#10b981" style={{ animation: 'spin 1s linear infinite', marginBottom: '0.75rem' }} />
+            <p style={{ fontSize: '0.95rem', fontWeight: '500', margin: 0 }}>Loading nearby places...</p>
           </div>
         ) : (
-          <div style={{
-            flex: 1,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            flexDirection: 'column',
-            color: '#6b7280',
-            background: '#fafafa'
-          }}>
-            <MapPin size={64} color="#d1d5db" style={{ marginBottom: '1rem' }} />
-            <p style={{ fontSize: '1.1rem', fontWeight: '600', margin: 0 }}>
-              Loading your location...
-            </p>
+          <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', color: '#6b7280', background: 'white', borderRadius: '12px' }}>
+            <MapPin size={48} color="#d1d5db" style={{ marginBottom: '0.75rem' }} />
+            <p style={{ fontSize: '1rem', fontWeight: '600', margin: 0 }}>Loading your location...</p>
           </div>
         )}
       </div>
 
-      <style>{`
-        @keyframes spin {
-          from { transform: rotate(0deg); }
-          to { transform: rotate(360deg); }
-        }
-      `}</style>
+      <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
     </div>
   );
 };
