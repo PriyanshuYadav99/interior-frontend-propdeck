@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Sparkles, Download, Home, Bed, Briefcase, Loader2, AlertCircle, CheckCircle, Sofa, ChevronDown, Grid3x3, MapPin, Bath, Utensils, X, ChevronLeft, ChevronRight, Clock, VolumeX, Shield, Building, Maximize2, Factory, AlignJustify, Crown, Flower2, TreePine } from 'lucide-react';
 import { generateDesign, checkHealth, checkSession, incrementGeneration } from './api';
 import RegistrationModal from './RegistrationModal';
@@ -60,8 +60,22 @@ const App = () => {
   const [previewScenarios, setPreviewScenarios] = useState([]);
   const [loadingScenarios, setLoadingScenarios] = useState(false);
   const [currentCategoryIndex, setCurrentCategoryIndex] = useState(0);
-  const [previewPlace, setPreviewPlace] = useState(null);
-  const [loadingPlace, setLoadingPlace] = useState(false);
+  const [isHoveringTourCard, setIsHoveringTourCard] = useState(false);
+  const autoScrollTimerRef = useRef(null);
+
+  // ✅ slide animation state
+  const [slideDirection, setSlideDirection] = useState('left'); // 'left' or 'right'
+  const [isSliding, setIsSliding] = useState(false);
+  const [displayIndex, setDisplayIndex] = useState(0); // what's actually shown
+
+  // Cache all categories
+  const [placesCache, setPlacesCache] = useState({});
+  const [loadingPlaces, setLoadingPlaces] = useState(true);
+
+  // room preview state
+  const [roomPreviewImage, setRoomPreviewImage] = useState(null);
+  const [loadingPreview, setLoadingPreview] = useState(false);
+  const [showBeforePreview, setShowBeforePreview] = useState(false);
 
   const categories = ['dining', 'education', 'nature', 'health', 'transport', 'shop', 'gym'];
   const APARTMENT_COORDS = { lat: 25.0694755, lng: 55.1468862 };
@@ -125,7 +139,32 @@ const App = () => {
   }, []);
 
   useEffect(() => { loadPreviewScenarios(); }, []);
-  useEffect(() => { loadPreviewPlace(categories[currentCategoryIndex]); }, [currentCategoryIndex]);
+  useEffect(() => { loadAllPlaces(); }, []);
+
+  // ✅ smooth slide helper — triggers animation then updates displayIndex
+  const slideTo = (newIndex, direction) => {
+    if (isSliding) return;
+    setSlideDirection(direction);
+    setIsSliding(true);
+    setCurrentCategoryIndex(newIndex);
+    setTimeout(() => {
+      setDisplayIndex(newIndex);
+      setIsSliding(false);
+    }, 350); // matches CSS transition duration
+  };
+
+  // Auto-scroll every 7s
+  useEffect(() => {
+    if (currentView !== 'default' || isHoveringTourCard) {
+      clearInterval(autoScrollTimerRef.current);
+      return;
+    }
+    autoScrollTimerRef.current = setInterval(() => {
+      const next = (currentCategoryIndex + 1) % categories.length;
+      slideTo(next, 'left');
+    }, 7000);
+    return () => clearInterval(autoScrollTimerRef.current);
+  }, [currentView, isHoveringTourCard, currentCategoryIndex, isSliding]);
 
   const loadPreviewScenarios = async () => {
     setLoadingScenarios(true);
@@ -139,21 +178,37 @@ const App = () => {
     }
   };
 
-  const loadPreviewPlace = async (category) => {
-    setLoadingPlace(true);
-    try {
-      const location = `${APARTMENT_COORDS.lat},${APARTMENT_COORDS.lng}`;
-      const result = await searchVirtualTour(location, category);
-      if (result.success && result.places && result.places.length > 0) setPreviewPlace(result.places[0]);
-    } catch (err) {
-      console.error('Failed to load preview place:', err);
-    } finally {
-      setLoadingPlace(false);
-    }
+  const loadAllPlaces = async () => {
+    setLoadingPlaces(true);
+    const location = `${APARTMENT_COORDS.lat},${APARTMENT_COORDS.lng}`;
+    const cache = {};
+    await Promise.all(
+      categories.map(async (category) => {
+        try {
+          const result = await searchVirtualTour(location, category);
+          if (result.success && result.places && result.places.length > 0) {
+            cache[category] = result.places[0];
+          }
+        } catch (err) {
+          console.error(`[APP] Failed to load places for ${category}:`, err);
+        }
+      })
+    );
+    setPlacesCache(cache);
+    setLoadingPlaces(false);
   };
 
-  const handleNextCategory = () => setCurrentCategoryIndex((prev) => (prev + 1) % categories.length);
-  const handlePrevCategory = () => setCurrentCategoryIndex((prev) => (prev - 1 + categories.length) % categories.length);
+  const handleNextCategory = () => {
+    clearInterval(autoScrollTimerRef.current);
+    const next = (currentCategoryIndex + 1) % categories.length;
+    slideTo(next, 'left');
+  };
+
+  const handlePrevCategory = () => {
+    clearInterval(autoScrollTimerRef.current);
+    const prev = (currentCategoryIndex - 1 + categories.length) % categories.length;
+    slideTo(prev, 'right');
+  };
 
   useEffect(() => {
     if (currentView === 'default' && sessionId && !isRegistered) checkServerGenerationCount(sessionId);
@@ -172,6 +227,23 @@ const App = () => {
       }
     } catch (error) {
       setGenerationCount(parseInt(localStorage.getItem('generationCount') || '0', 10));
+    }
+  };
+
+  const loadRoomPreview = async (roomId) => {
+    setLoadingPreview(true);
+    setRoomPreviewImage(null);
+    setShowBeforePreview(true);
+    try {
+      const res = await fetch(`https://interior-backend-production.up.railway.app/api/room-preview/${clientName}/${roomId}`);
+      const data = await res.json();
+      if (data.success) {
+        setRoomPreviewImage(`data:image/png;base64,${data.image_base64}`);
+      }
+    } catch (err) {
+      console.error('[APP] Failed to load room preview:', err);
+    } finally {
+      setLoadingPreview(false);
     }
   };
 
@@ -219,6 +291,7 @@ const App = () => {
       }];
       const newHistory = [...processedImages, ...imageHistory];
       setImageHistory(newHistory);
+      setShowBeforePreview(false);
       try {
         const lightweightHistory = newHistory.slice(0, 20).map(img => ({
           id: img.id,
@@ -269,13 +342,10 @@ const App = () => {
     }
   };
 
-  // ─── Virtual Tour state ───────────────────────────────────────────────────
   const [virtualTourInitialPlace, setVirtualTourInitialPlace] = useState(null);
   const [virtualTourInitialMode, setVirtualTourInitialMode] = useState('map');
-  // NEW: tracks which category tab should be active when VirtualTour opens
   const [virtualTourInitialCategory, setVirtualTourInitialCategory] = useState('dining');
 
-  // Opens Virtual Tour on map view, pre-selecting the currently previewed category
   const handleOpenVirtualTourMap = (place) => {
     setVirtualTourInitialPlace(place);
     setVirtualTourInitialMode('map');
@@ -283,7 +353,6 @@ const App = () => {
     setCurrentView('virtualTour');
   };
 
-  // Opens Virtual Tour on street view, pre-selecting the currently previewed category
   const handleOpenVirtualTourStreetView = (place) => {
     setVirtualTourInitialPlace(place);
     setVirtualTourInitialMode('streetview');
@@ -291,7 +360,6 @@ const App = () => {
     setCurrentView('virtualTour');
   };
 
-  // Opens Virtual Tour when user clicks the card body (no specific place)
   const handleOpenVirtualTourCard = () => {
     setVirtualTourInitialPlace(null);
     setVirtualTourInitialMode('map');
@@ -312,11 +380,14 @@ const App = () => {
     setCurrentView('scenario');
   };
 
-  return (
-    <div style={{ width: '100vw', height: '100vh', background: '#e5e7eb', display: 'flex', flexDirection: 'column', padding: '1rem', gap: '1rem', boxSizing: 'border-box' }}>
+  const shouldShowBefore = showBeforePreview || imageHistory.length === 0;
+  const currentPlace = placesCache[categories[displayIndex]];
 
-      {/* TOP SECTION — grey container, fixed proportional height */}
-      <div style={{ flex: '0 0 58%', background: '#f3f4f6', borderRadius: '20px', padding: '1.25rem', display: 'flex', gap: '1.25rem', boxSizing: 'border-box', overflow: 'hidden' }}>
+  return (
+    <div style={{ width: '100vw', height: '100vh', background: 'white', display: 'flex', flexDirection: 'column', padding: '1rem', gap: '1rem', boxSizing: 'border-box' }}>
+
+      {/* TOP SECTION */}
+      <div style={{ flex: '0 0 58%', background: '#eaecef', borderRadius: '20px', padding: '1.25rem', display: 'flex', gap: '1.25rem', boxSizing: 'border-box', overflow: 'hidden' }}>
 
         {currentView === 'scenario' && (
           <div style={{ flex: 1, background: 'white', borderRadius: '16px', overflow: 'hidden' }}>
@@ -337,42 +408,56 @@ const App = () => {
 
         {currentView === 'default' && (
           <>
-            {/* LEFT: white card + button, no stretch */}
+            {/* LEFT */}
             <div style={{ width: '48%', flexShrink: 0, display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
               <div style={{ background: 'white', borderRadius: '16px', padding: '1rem', boxSizing: 'border-box' }}>
+
                 {/* ROOMS */}
                 <div style={{ marginBottom: '0.7rem', display: 'flex', alignItems: 'flex-start', gap: '0.5rem' }}>
                   <Home size={20} color="#9ca3af" style={{ marginTop: '0.55rem', flexShrink: 0 }} />
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', flex: 1 }}>
-                    {rooms.map((room) => { const Icon = room.icon; return (
-                      <button key={room.id} onClick={() => setSelectedRoom(room.id)} style={{ padding: '0.55rem 0.9rem', borderRadius: '8px', border: selectedRoom === room.id ? '2px solid #9333ea' : '1px solid #e5e7eb', background: selectedRoom === room.id ? '#faf5ff' : 'white', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.88rem', fontWeight: '500', color: selectedRoom === room.id ? '#9333ea' : '#6b7280', whiteSpace: 'nowrap' }}>
-                        <Icon size={16} /><span>{room.name}</span>
-                      </button>
-                    ); })}
+                    {rooms.map((room) => {
+                      const Icon = room.icon;
+                      return (
+                        <button key={room.id} onClick={() => { setSelectedRoom(room.id); loadRoomPreview(room.id); }}
+                          style={{ padding: '0.55rem 0.9rem', borderRadius: '8px', border: selectedRoom === room.id ? '2px solid #9333ea' : '1px solid #e5e7eb', background: selectedRoom === room.id ? '#faf5ff' : 'white', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.88rem', fontWeight: '500', color: selectedRoom === room.id ? '#9333ea' : '#6b7280', whiteSpace: 'nowrap' }}>
+                          <Icon size={16} /><span>{room.name}</span>
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
+
                 {/* STYLES */}
                 <div style={{ marginBottom: '0.7rem', display: 'flex', alignItems: 'flex-start', gap: '0.5rem' }}>
                   <Sparkles size={20} color="#9ca3af" style={{ marginTop: '0.55rem', flexShrink: 0 }} />
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', flex: 1 }}>
-                    {styles.map((style) => { const StyleIcon = style.icon; return (
-                      <button key={style.id} onClick={() => { setSelectedStyle(style.id); setCustomPrompt(''); }} style={{ padding: '0.55rem 0.9rem', borderRadius: '8px', border: selectedStyle === style.id ? '2px solid #9333ea' : '1px solid #e5e7eb', background: selectedStyle === style.id ? '#faf5ff' : 'white', cursor: 'pointer', fontSize: '0.88rem', fontWeight: '500', color: selectedStyle === style.id ? '#9333ea' : '#6b7280', display: 'flex', alignItems: 'center', gap: '0.4rem', whiteSpace: 'nowrap' }}>
-                        <StyleIcon size={15} />{style.name}
-                      </button>
-                    ); })}
+                    {styles.map((style) => {
+                      const StyleIcon = style.icon;
+                      return (
+                        <button key={style.id} onClick={() => { setSelectedStyle(style.id); setCustomPrompt(''); }}
+                          style={{ padding: '0.55rem 0.9rem', borderRadius: '8px', border: selectedStyle === style.id ? '2px solid #9333ea' : '1px solid #e5e7eb', background: selectedStyle === style.id ? '#faf5ff' : 'white', cursor: 'pointer', fontSize: '0.88rem', fontWeight: '500', color: selectedStyle === style.id ? '#9333ea' : '#6b7280', display: 'flex', alignItems: 'center', gap: '0.4rem', whiteSpace: 'nowrap' }}>
+                          <StyleIcon size={15} />{style.name}
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
-                {/* OR + PROMPT */}
+
                 <div style={{ textAlign: 'center', color: '#9ca3af', fontWeight: '600', margin: '0.3rem 0', fontSize: '0.75rem' }}>OR</div>
-                <textarea value={customPrompt} onChange={(e) => { setCustomPrompt(e.target.value); if (e.target.value.trim()) setSelectedStyle(''); }} placeholder="Describe your style (e.g., Space theme kids room...)" style={{ width: '100%', padding: '0.55rem', border: customPrompt.trim() ? '2px solid #9333ea' : '1px solid #e5e7eb', borderRadius: '6px', resize: 'none', height: '2.8rem', fontSize: '0.8rem', outline: 'none', fontFamily: 'inherit', boxSizing: 'border-box', color: '#374151' }} />
+                <textarea
+                  value={customPrompt}
+                  onChange={(e) => { setCustomPrompt(e.target.value); if (e.target.value.trim()) setSelectedStyle(''); }}
+                  placeholder="Describe your style (e.g., Space theme kids room...)"
+                  style={{ width: '100%', padding: '0.55rem', border: customPrompt.trim() ? '2px solid #9333ea' : '1px solid #e5e7eb', borderRadius: '6px', resize: 'none', height: '2.8rem', fontSize: '0.8rem', outline: 'none', fontFamily: 'inherit', boxSizing: 'border-box', color: '#374151' }}
+                />
               </div>
 
-              {/* GENERATE BUTTON */}
-              <button onClick={handleGenerate} disabled={isGenerating || apiStatus === 'disconnected'} style={{ width: '100%', background: isGenerating || apiStatus === 'disconnected' ? '#d1d5db' : '#22c55e', color: 'white', padding: '0.75rem', borderRadius: '10px', fontWeight: '600', fontSize: '0.95rem', border: 'none', cursor: isGenerating || apiStatus === 'disconnected' ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
+              <button onClick={handleGenerate} disabled={isGenerating || apiStatus === 'disconnected'}
+                style={{ width: '100%', background: isGenerating || apiStatus === 'disconnected' ? '#d1d5db' : '#22c55e', color: 'white', padding: '0.75rem', borderRadius: '10px', fontWeight: '600', fontSize: '0.95rem', border: 'none', cursor: isGenerating || apiStatus === 'disconnected' ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
                 {isGenerating ? <><Loader2 size={18} style={{ animation: 'spin 1s linear infinite' }} />Generating...</> : <><Sparkles size={18} />Generate Design</>}
               </button>
 
-              {/* POWERED BY */}
               <div style={{ textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem' }}>
                 <span style={{ fontSize: '0.75rem', color: '#9ca3af', fontWeight: '500', fontStyle: 'italic' }}>powered by</span>
                 <img src="/logo.png" alt="PropDeck Logo" style={{ height: '14px', width: 'auto' }} />
@@ -381,27 +466,49 @@ const App = () => {
 
             {/* RIGHT: image panel */}
             <div style={{ flex: 1, background: 'white', borderRadius: '16px', overflow: 'hidden', display: 'flex', flexDirection: 'column', position: 'relative' }}>
-              {imageHistory.length === 0 ? (
-                <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <div style={{ textAlign: 'center' }}>
-                    <Sparkles size={56} color="#d1d5db" style={{ margin: '0 auto 1rem' }} />
-                    <p style={{ color: '#9ca3af', fontSize: '1rem', marginBottom: '0.4rem', fontWeight: '500' }}>Your AI-generated designs will appear here</p>
-                    <p style={{ color: '#d1d5db', fontSize: '0.8rem' }}>Select a room and style, then click Generate Design</p>
+              {shouldShowBefore ? (
+                loadingPreview ? (
+                  <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '0.75rem' }}>
+                    <Loader2 size={36} color="#9333ea" style={{ animation: 'spin 1s linear infinite' }} />
+                    <p style={{ color: '#9ca3af', fontSize: '0.875rem', margin: 0 }}>Loading room preview...</p>
                   </div>
-                </div>
+                ) : roomPreviewImage ? (
+                  <div style={{ position: 'relative', flex: 1, overflow: 'hidden' }}>
+                    <img src={roomPreviewImage} alt="Room reference" style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center', display: 'block', filter: 'brightness(0.93)' }} />
+                    <div style={{ position: 'absolute', top: '0.75rem', left: '0.75rem', background: 'rgba(0,0,0,0.55)', color: 'white', fontSize: '0.72rem', fontWeight: '700', padding: '0.3rem 0.7rem', borderRadius: '20px', letterSpacing: '0.06em', backdropFilter: 'blur(4px)', zIndex: 5 }}>BEFORE</div>
+                    {isGenerating && (
+                      <div style={{ position: 'absolute', inset: 0, background: 'rgba(255,255,255,0.72)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '0.75rem', backdropFilter: 'blur(3px)', zIndex: 10 }}>
+                        <Loader2 size={42} color="#9333ea" style={{ animation: 'spin 1s linear infinite' }} />
+                        <p style={{ color: '#9333ea', fontWeight: '600', fontSize: '0.95rem', margin: 0 }}>Generating your design...</p>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <div style={{ textAlign: 'center' }}>
+                      <Sparkles size={56} color="#d1d5db" style={{ margin: '0 auto 1rem' }} />
+                      <p style={{ color: '#9ca3af', fontSize: '1rem', marginBottom: '0.4rem', fontWeight: '500' }}>Your AI-generated designs will appear here</p>
+                      <p style={{ color: '#d1d5db', fontSize: '0.8rem' }}>Select a room and style, then click Generate Design</p>
+                    </div>
+                  </div>
+                )
               ) : (
                 <div style={{ position: 'relative', flex: 1, overflow: 'hidden' }}>
                   <img src={imageHistory[selectedImageIndex].url} alt="Design" style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center', display: 'block' }} />
-                  {imageHistory.length > 1 && (
-                    <div style={{ position: 'absolute', top: '1rem', right: '1rem', display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-                      {imageHistory.slice(0, 6).map((img, idx) => (
-                        <button key={idx} onClick={() => setSelectedImageIndex(idx)} style={{ width: '40px', height: '40px', border: selectedImageIndex === idx ? '2px solid #3b82f6' : '2px solid white', borderRadius: '8px', overflow: 'hidden', cursor: 'pointer', padding: 0, background: 'none', boxShadow: '0 2px 8px rgba(0,0,0,0.2)', flexShrink: 0 }}>
-                          <img src={img.url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                        </button>
-                      ))}
+                  <div style={{ position: 'absolute', top: '0.75rem', left: '0.75rem', background: 'rgba(147,51,234,0.78)', color: 'white', fontSize: '0.72rem', fontWeight: '700', padding: '0.3rem 0.7rem', borderRadius: '20px', letterSpacing: '0.06em', backdropFilter: 'blur(4px)', zIndex: 5 }}>AFTER</div>
+                  <div style={{ position: 'absolute', top: '1rem', right: '1rem', display: 'flex', flexDirection: 'column', gap: '0.4rem', zIndex: 5 }}>
+                    {imageHistory.slice(0, 6).map((img, idx) => (
+                      <button key={idx} onClick={() => setSelectedImageIndex(idx)} style={{ width: '40px', height: '40px', border: selectedImageIndex === idx ? '2px solid #3b82f6' : '2px solid white', borderRadius: '8px', overflow: 'hidden', cursor: 'pointer', padding: 0, background: 'none', boxShadow: '0 2px 8px rgba(0,0,0,0.2)', flexShrink: 0 }}>
+                        <img src={img.url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      </button>
+                    ))}
+                  </div>
+                  {isGenerating && (
+                    <div style={{ position: 'absolute', inset: 0, background: 'rgba(255,255,255,0.72)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '0.75rem', backdropFilter: 'blur(3px)', zIndex: 10 }}>
+                      <Loader2 size={42} color="#9333ea" style={{ animation: 'spin 1s linear infinite' }} />
+                      <p style={{ color: '#9333ea', fontWeight: '600', fontSize: '0.95rem', margin: 0 }}>Generating your design...</p>
                     </div>
                   )}
-                  {/* Download button */}
                   <button onClick={() => downloadImage(imageHistory[selectedImageIndex], selectedImageIndex)} style={{ position: 'absolute', bottom: '1rem', right: '1rem', background: 'white', color: '#1f2937', padding: '0.65rem', borderRadius: '50%', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', width: '44px', height: '44px', boxShadow: '0 4px 12px rgba(0,0,0,0.2)', zIndex: 10 }}>
                     <Download size={20} />
                   </button>
@@ -412,7 +519,7 @@ const App = () => {
         )}
       </div>
 
-      {/* BOTTOM SECTION — fills remaining space */}
+      {/* BOTTOM SECTION */}
       <div style={{ flex: 1, minHeight: 0, display: 'flex', gap: '1rem' }}>
 
         {/* LIFEECHO CARD */}
@@ -424,48 +531,39 @@ const App = () => {
             </div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', flex: 1, overflow: 'hidden', justifyContent: 'center' }}>
-              {/* ROW 1 - left */}
               <div style={{ overflow: 'hidden' }}>
                 <div className="marquee-left">
                   {[...previewScenarios.slice(0, 2), ...previewScenarios.slice(0, 2)].map((scenario, idx) => {
                     const Icon = iconMap[scenario.icon] || Clock;
                     return (
                       <button key={"r1-" + idx} onClick={() => handlePillClick(scenario)} style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.4rem 0.9rem 0.4rem 0.45rem', background: 'white', border: '2px solid #10b981', borderRadius: '50px', cursor: 'pointer', fontSize: '0.82rem', fontWeight: '500', color: '#374151', whiteSpace: 'nowrap', flexShrink: 0, marginRight: '0.6rem', boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
-                        <div style={{ width: '24px', height: '24px', borderRadius: '50%', background: '#10b981', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                          <Icon size={12} color="white" />
-                        </div>
+                        <div style={{ width: '24px', height: '24px', borderRadius: '50%', background: '#10b981', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><Icon size={12} color="white" /></div>
                         <span>{scenario.title}</span>
                       </button>
                     );
                   })}
                 </div>
               </div>
-              {/* ROW 2 - right */}
               <div style={{ overflow: 'hidden' }}>
                 <div className="marquee-right">
                   {[...previewScenarios.slice(2, 4), ...previewScenarios.slice(2, 4)].map((scenario, idx) => {
                     const Icon = iconMap[scenario.icon] || Clock;
                     return (
                       <button key={"r2-" + idx} onClick={() => handlePillClick(scenario)} style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.4rem 0.9rem 0.4rem 0.45rem', background: 'white', border: '1.5px solid #d1d5db', borderRadius: '50px', cursor: 'pointer', fontSize: '0.82rem', fontWeight: '500', color: '#374151', whiteSpace: 'nowrap', flexShrink: 0, marginRight: '0.6rem', boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
-                        <div style={{ width: '24px', height: '24px', borderRadius: '50%', background: '#e5e7eb', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                          <Icon size={12} color="#9ca3af" />
-                        </div>
+                        <div style={{ width: '24px', height: '24px', borderRadius: '50%', background: '#e5e7eb', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><Icon size={12} color="#9ca3af" /></div>
                         <span>{scenario.title}</span>
                       </button>
                     );
                   })}
                 </div>
               </div>
-              {/* ROW 3 - left */}
               <div style={{ overflow: 'hidden' }}>
                 <div className="marquee-left" style={{ animationDuration: '22s' }}>
                   {[...previewScenarios.slice(4, 6), ...previewScenarios.slice(4, 6)].map((scenario, idx) => {
                     const Icon = iconMap[scenario.icon] || Clock;
                     return (
                       <button key={"r3-" + idx} onClick={() => handlePillClick(scenario)} style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.4rem 0.9rem 0.4rem 0.45rem', background: 'white', border: '2px solid #10b981', borderRadius: '50px', cursor: 'pointer', fontSize: '0.82rem', fontWeight: '500', color: '#374151', whiteSpace: 'nowrap', flexShrink: 0, marginRight: '0.6rem', boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
-                        <div style={{ width: '24px', height: '24px', borderRadius: '50%', background: '#10b981', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                          <Icon size={12} color="white" />
-                        </div>
+                        <div style={{ width: '24px', height: '24px', borderRadius: '50%', background: '#10b981', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><Icon size={12} color="white" /></div>
                         <span>{scenario.title}</span>
                       </button>
                     );
@@ -479,48 +577,63 @@ const App = () => {
         {/* VIRTUAL TOUR CARD */}
         <div style={{ flex: 1, background: '#eaecef', borderRadius: '16px', padding: '1rem 1.25rem', display: 'flex', flexDirection: 'column', gap: '0.75rem', minWidth: 0 }}>
           <h3 style={{ fontSize: '1rem', fontWeight: '700', color: '#1f2937', margin: 0, flexShrink: 0 }}>Virtual Tour</h3>
-          {loadingPlace ? (
+
+          {loadingPlaces ? (
             <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <Loader2 size={28} color="#3b82f6" style={{ animation: 'spin 1s linear infinite' }} />
             </div>
-          ) : previewPlace ? (
-            <div
-              onClick={handleOpenVirtualTourCard}
-              style={{ flex: 1, background: 'white', borderRadius: '12px', padding: '1rem', display: 'flex', alignItems: 'center', gap: '0.85rem', cursor: 'pointer', transition: 'all 0.2s', border: '2px solid transparent' }}
-              onMouseEnter={(e) => { e.currentTarget.style.borderColor = '#3b82f6'; e.currentTarget.style.transform = 'translateY(-2px)'; }}
-              onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'transparent'; e.currentTarget.style.transform = 'translateY(0)'; }}
+          ) : currentPlace ? (
+            // ✅ Outer wrapper clips the sliding card
+            <div style={{ flex: 1, overflow: 'hidden', borderRadius: '12px', position: 'relative' }}
+              onMouseEnter={() => setIsHoveringTourCard(true)}
+              onMouseLeave={() => setIsHoveringTourCard(false)}
             >
-              <button onClick={(e) => { e.stopPropagation(); handlePrevCategory(); }} style={{ background: '#f3f4f6', border: 'none', borderRadius: '50%', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0 }}>
-                <ChevronLeft size={18} />
-              </button>
-              {previewPlace.photo_url && <img src={previewPlace.photo_url} alt={previewPlace.name} style={{ width: '100px', height: '100px', objectFit: 'cover', borderRadius: '10px', flexShrink: 0 }} />}
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <h4 style={{ fontSize: '1rem', fontWeight: '600', margin: '0 0 0.35rem 0', color: '#1f2937', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{previewPlace.name}</h4>
-                <p style={{ fontSize: '0.85rem', color: '#6b7280', margin: 0 }}>~{previewPlace.distance}km • {categories[currentCategoryIndex]}</p>
-              </div>
-              {/* Map pin + walking icons */}
-              <div style={{ display: 'flex', flexDirection: 'row', gap: '0.5rem', alignItems: 'center', flexShrink: 0 }}>
-                <button
-                  onClick={(e) => { e.stopPropagation(); handleOpenVirtualTourMap(previewPlace); }}
-                  style={{ width: '30px', height: '30px', border: 'none', background: 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', padding: 0 }}
-                  title="View on map"
-                >
-                  <MapPin size={22} color="#3b82f6" strokeWidth={2} />
+              {/* ✅ Sliding card — animates in from left or right */}
+              <div
+                key={displayIndex}
+                style={{
+                  position: 'absolute', inset: 0,
+                  background: 'white', borderRadius: '12px', padding: '1rem',
+                  display: 'flex', alignItems: 'center', gap: '0.85rem',
+                  cursor: 'pointer',
+                  animation: `slideIn${slideDirection === 'left' ? 'Left' : 'Right'} 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards`,
+                }}
+                onClick={handleOpenVirtualTourCard}
+              >
+                <button onClick={(e) => { e.stopPropagation(); handlePrevCategory(); }} style={{ background: '#f3f4f6', border: 'none', borderRadius: '50%', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0 }}>
+                  <ChevronLeft size={18} />
                 </button>
-                <button
-                  onClick={(e) => { e.stopPropagation(); handleOpenVirtualTourStreetView(previewPlace); }}
-                  style={{ width: '30px', height: '30px', border: 'none', background: 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', padding: 0 }}
-                  title="Street View"
-                >
-                  <svg width="22" height="22" viewBox="0 0 24 24" fill="#f97316" xmlns="http://www.w3.org/2000/svg">
-                    <circle cx="12" cy="5" r="2" fill="#f97316"/>
-                    <path d="M12 8c-1.5 0-3 .8-3.5 2L7 13h2l1-2v3l-2 5h2l1-3 1 3h2l-2-5v-3l1 2h2l-1.5-3C14 8.8 13.5 8 12 8z" fill="#f97316"/>
-                  </svg>
+
+                {currentPlace.photo_url && (
+                  <img src={currentPlace.photo_url} alt={currentPlace.name} style={{ width: '80px', height: '80px', objectFit: 'cover', borderRadius: '10px', flexShrink: 0 }} />
+                )}
+
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <h4 style={{ fontSize: '0.95rem', fontWeight: '600', margin: '0 0 0.25rem 0', color: '#1f2937', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {currentPlace.name}
+                  </h4>
+                  <p style={{ fontSize: '0.8rem', color: '#6b7280', margin: '0 0 0.35rem 0' }}>
+                    ~{currentPlace.distance}km • {categories[displayIndex]}
+                  </p>
+                  
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'row', gap: '0.5rem', alignItems: 'center', flexShrink: 0 }}>
+                  <button onClick={(e) => { e.stopPropagation(); handleOpenVirtualTourMap(currentPlace); }} style={{ width: '30px', height: '30px', border: 'none', background: 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', padding: 0 }} title="View on map">
+                    <MapPin size={22} color="#3b82f6" strokeWidth={2} />
+                  </button>
+                  <button onClick={(e) => { e.stopPropagation(); handleOpenVirtualTourStreetView(currentPlace); }} style={{ width: '30px', height: '30px', border: 'none', background: 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', padding: 0 }} title="Street View">
+                    <svg width="22" height="22" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                      <circle cx="12" cy="5" r="2" fill="#f97316"/>
+                      <path d="M12 8c-1.5 0-3 .8-3.5 2L7 13h2l1-2v3l-2 5h2l1-3 1 3h2l-2-5v-3l1 2h2l-1.5-3C14 8.8 13.5 8 12 8z" fill="#f97316"/>
+                    </svg>
+                  </button>
+                </div>
+
+                <button onClick={(e) => { e.stopPropagation(); handleNextCategory(); }} style={{ background: '#f3f4f6', border: 'none', borderRadius: '50%', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0 }}>
+                  <ChevronRight size={18} />
                 </button>
               </div>
-              <button onClick={(e) => { e.stopPropagation(); handleNextCategory(); }} style={{ background: '#f3f4f6', border: 'none', borderRadius: '50%', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0 }}>
-                <ChevronRight size={18} />
-              </button>
             </div>
           ) : (
             <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#9ca3af', fontSize: '0.875rem' }}>No places found</div>
@@ -528,7 +641,13 @@ const App = () => {
         </div>
       </div>
 
-      <RegistrationModal isOpen={showRegistrationModal} onClose={() => { if (isRegistered) setShowRegistrationModal(false); }} onSuccess={handleRegistrationSuccess} generatedCount={generationCount} sessionId={sessionId} />
+      <RegistrationModal
+        isOpen={showRegistrationModal}
+        onClose={() => { if (isRegistered) setShowRegistrationModal(false); }}
+        onSuccess={handleRegistrationSuccess}
+        generatedCount={generationCount}
+        sessionId={sessionId}
+      />
 
       <style>{`
         @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
@@ -537,6 +656,17 @@ const App = () => {
         .marquee-left { display: inline-flex; animation: marquee-left 18s linear infinite; width: max-content; }
         .marquee-right { display: inline-flex; animation: marquee-right 18s linear infinite; width: max-content; }
         .marquee-left:hover, .marquee-right:hover { animation-play-state: paused; }
+
+        /* ✅ Slide animations for virtual tour card */
+        @keyframes slideInLeft {
+          from { transform: translateX(100%); opacity: 0; }
+          to   { transform: translateX(0);    opacity: 1; }
+        }
+        @keyframes slideInRight {
+          from { transform: translateX(-100%); opacity: 0; }
+          to   { transform: translateX(0);     opacity: 1; }
+        }
+
         * { box-sizing: border-box; }
         ::-webkit-scrollbar { width: 4px; height: 4px; }
         ::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 10px; }

@@ -145,13 +145,13 @@ const LifeEcho = ({ onBack, isEmbedded = false, initialScenario = null }) => {
               <input type="text" placeholder="Explain your unique scenario" value={scenarioText}
                 onChange={(e) => { setScenarioText(e.target.value); setError(''); }}
                 onKeyPress={handleKeyPress} disabled={isGenerating}
-        style={{ flex: 1, padding: '0.75rem 1rem', fontSize: '0.9rem', border: error ? '1.5px solid #ef4444' : '1.5px solid #e5e7eb', borderRadius: '10px', outline: 'none', background: 'white', color: '#6b7280', opacity: isGenerating ? 0.6 : 1 }}
+                style={{ flex: 1, padding: '0.75rem 1rem', fontSize: '0.9rem', border: error ? '1.5px solid #ef4444' : '1.5px solid #e5e7eb', borderRadius: '10px', outline: 'none', background: 'white', color: '#6b7280', opacity: isGenerating ? 0.6 : 1 }}
               />
             </div>
             {error && <div style={{ margin: '0.75rem 1.5rem 0', padding: '0.75rem 1rem', background: '#fef2f2', border: '1px solid #fecaca', borderRadius: '10px', color: '#dc2626', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}><AlertCircle size={15} />{error}</div>}
             {isGenerating && <div style={{ margin: '0.75rem 1.5rem 0', padding: '0.75rem 1rem', background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: '10px', color: '#1e40af', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}><Loader2 size={15} style={{ animation: 'spin 1s linear infinite' }} />Generating your custom scenario...</div>}
             {scenarios.length > 0 && (
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.65rem', padding: '1.25rem 1.5rem' }}>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.65rem', padding: '1.25rem 1.5rem 0.5rem 1.5rem' }}>
                 {scenarios.map((scenario) => {
                   const Icon = iconMap[scenario.icon] || Building;
                   const isHighlighted = highlightedIds.includes(scenario.id);
@@ -167,7 +167,8 @@ const LifeEcho = ({ onBack, isEmbedded = false, initialScenario = null }) => {
                 })}
               </div>
             )}
-            <div style={{ display: 'flex', justifyContent: 'center', padding: '0 1.5rem 1.5rem' }}>
+            {/* GENERATE MORE — extra top margin to push it down */}
+            <div style={{ display: 'flex', justifyContent: 'center', padding: '2rem 1.5rem 1.5rem' }}>
               <button onClick={handleGenerateMoreScenarios} disabled={isGeneratingMore || isGenerating}
                 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.85rem 2rem', fontSize: '0.95rem', fontWeight: '600', color: (isGeneratingMore || isGenerating) ? '#9ca3af' : '#1f2937', background: 'white', border: (isGeneratingMore || isGenerating) ? '2px solid #e5e7eb' : '2px solid #10b981', borderRadius: '50px', cursor: (isGeneratingMore || isGenerating) ? 'not-allowed' : 'pointer', opacity: (isGeneratingMore || isGenerating) ? 0.6 : 1 }}>
                 {isGeneratingMore ? <><Loader2 size={18} style={{ animation: 'spin 1s linear infinite' }} />Loading...</> : loadedBatches >= 7 ? <><Sparkles size={18} />Start Over</> : <><Sparkles size={18} />Generate More</>}
@@ -176,12 +177,11 @@ const LifeEcho = ({ onBack, isEmbedded = false, initialScenario = null }) => {
           </>
         )}
 
-        {/* SCENARIO DETAIL — matches Figma */}
+        {/* SCENARIO DETAIL */}
         {selectedScenario && (
           <div style={{ padding: '0.75rem 1.5rem 1.5rem', animation: 'fadeIn 0.3s ease-out' }}>
             <div style={{ background: 'white', borderRadius: '16px', padding: '1.5rem 1.75rem', boxShadow: '0 2px 10px rgba(0,0,0,0.06)' }}>
 
-              {/* Title row: left arrow sits directly left of title text, NO separate back button */}
               <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.5rem', marginBottom: '1.1rem' }}>
                 <button onClick={() => setSelectedScenario(null)}
                   style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center', flexShrink: 0, marginTop: '0.25rem' }}>
@@ -192,7 +192,6 @@ const LifeEcho = ({ onBack, isEmbedded = false, initialScenario = null }) => {
                 </h2>
               </div>
 
-              {/* Story paragraphs — indented to align with title text */}
               <div style={{ fontSize: '0.93rem', lineHeight: '1.75', color: '#374151', marginBottom: '1.25rem', paddingLeft: '1.75rem' }}>
                 {selectedScenario.story ? (
                   selectedScenario.story.map((paragraph, idx) => {
@@ -205,7 +204,6 @@ const LifeEcho = ({ onBack, isEmbedded = false, initialScenario = null }) => {
                 )}
               </div>
 
-              {/* Tagline — orange pill, inline/fit-content (never full width) */}
               {extractTagline(selectedScenario) && (
                 <div style={{ paddingLeft: '1.75rem' }}>
                   <span style={{
