@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Sparkles, Download, Home, Bed, Briefcase, Loader2, AlertCircle, CheckCircle, Sofa, ChevronDown, Grid3x3, MapPin, Bath, Utensils, X, ChevronLeft, ChevronRight, Clock, VolumeX, Shield, Building, Maximize2, Factory, AlignJustify, Crown, Flower2, TreePine } from 'lucide-react';
+import { Sparkles,Palette, Download, Home, Bed, Briefcase, Loader2, AlertCircle, CheckCircle, Sofa, ChevronDown, Grid3x3, MapPin, Bath, Utensils, X, ChevronLeft, ChevronRight, Clock, VolumeX, Shield, Building, Maximize2, Factory, AlignJustify, Crown, Flower2, TreePine } from 'lucide-react';
 import { generateDesign, checkHealth, checkSession, incrementGeneration } from './api';
 import RegistrationModal from './RegistrationModal';
 import LifeEcho from './LifeEcho';
@@ -61,6 +61,7 @@ const App = () => {
   const [loadingScenarios, setLoadingScenarios] = useState(false);
   const [currentCategoryIndex, setCurrentCategoryIndex] = useState(0);
   const [isHoveringTourCard, setIsHoveringTourCard] = useState(false);
+  const [highlightedPillIds, setHighlightedPillIds] = useState([]);
   const autoScrollTimerRef = useRef(null);
 
   // ✅ slide animation state
@@ -140,7 +141,12 @@ const App = () => {
 
   useEffect(() => { loadPreviewScenarios(); }, []);
   useEffect(() => { loadAllPlaces(); }, []);
-
+  useEffect(() => {
+  if (previewScenarios.length > 0) {
+    const shuffled = [...previewScenarios].sort(() => Math.random() - 0.5);
+    setHighlightedPillIds(shuffled.slice(0, 2).map(s => s.id));
+  }
+}, [previewScenarios]);
   // ✅ smooth slide helper — triggers animation then updates displayIndex
   const slideTo = (newIndex, direction) => {
     if (isSliding) return;
@@ -387,15 +393,15 @@ const App = () => {
     <div style={{ width: '100vw', height: '100vh', background: 'white', display: 'flex', flexDirection: 'column', padding: '1rem', gap: '1rem', boxSizing: 'border-box' }}>
 
       {/* TOP SECTION */}
-      <div style={{ flex: '0 0 58%', background: '#eaecef', borderRadius: '20px', padding: '1.25rem', display: 'flex', gap: '1.25rem', boxSizing: 'border-box', overflow: 'hidden' }}>
+      <div style={{ flex: '0 0 58%', background: '#f5f5f5', borderRadius: '20px', padding: '1.25rem', display: 'flex', gap: '1.25rem', boxSizing: 'border-box', overflow: 'hidden' }}>
 
         {currentView === 'scenario' && (
-          <div style={{ flex: 1, background: 'white', borderRadius: '16px', overflow: 'hidden' }}>
-            <LifeEcho onBack={handleBackToDefault} initialScenario={selectedPreviewScenario} />
-          </div>
-        )}
+  <div style={{ flex: 1, overflow: 'hidden' }}>
+    <LifeEcho onBack={handleBackToDefault} initialScenario={selectedPreviewScenario} />
+  </div>
+)}
         {currentView === 'virtualTour' && (
-          <div style={{ flex: 1, background: 'white', borderRadius: '16px', overflow: 'hidden' }}>
+  <div style={{ flex: 1, overflow: 'hidden' }}>
             <VirtualTour
               onBack={handleBackToDefault}
               isEmbedded={true}
@@ -414,7 +420,7 @@ const App = () => {
 
                 {/* ROOMS */}
                 <div style={{ marginBottom: '0.7rem', display: 'flex', alignItems: 'flex-start', gap: '0.5rem' }}>
-                  <Home size={20} color="#9ca3af" style={{ marginTop: '0.55rem', flexShrink: 0 }} />
+                  <Home size={20} color="#1f2937" style={{ marginTop: '0.55rem', flexShrink: 0 }} />
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', flex: 1 }}>
                     {rooms.map((room) => {
                       const Icon = room.icon;
@@ -430,7 +436,7 @@ const App = () => {
 
                 {/* STYLES */}
                 <div style={{ marginBottom: '0.7rem', display: 'flex', alignItems: 'flex-start', gap: '0.5rem' }}>
-                  <Sparkles size={20} color="#9ca3af" style={{ marginTop: '0.55rem', flexShrink: 0 }} />
+                  <Palette size={20} color="#1f2937" style={{ marginTop: '0.55rem', flexShrink: 0 }} />
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', flex: 1 }}>
                     {styles.map((style) => {
                       const StyleIcon = style.icon;
@@ -454,7 +460,7 @@ const App = () => {
               </div>
 
               <button onClick={handleGenerate} disabled={isGenerating || apiStatus === 'disconnected'}
-                style={{ width: '100%', background: isGenerating || apiStatus === 'disconnected' ? '#d1d5db' : '#22c55e', color: 'white', padding: '0.75rem', borderRadius: '10px', fontWeight: '600', fontSize: '0.95rem', border: 'none', cursor: isGenerating || apiStatus === 'disconnected' ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
+                style={{ width: '100%', background: isGenerating || apiStatus === 'disconnected' ? '#d1d5db' : '#256D11', color: 'white', padding: '0.75rem', borderRadius: '10px', fontWeight: '600', fontSize: '0.95rem', border: 'none', cursor: isGenerating || apiStatus === 'disconnected' ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
                 {isGenerating ? <><Loader2 size={18} style={{ animation: 'spin 1s linear infinite' }} />Generating...</> : <><Sparkles size={18} />Generate Design</>}
               </button>
 
@@ -475,7 +481,6 @@ const App = () => {
                 ) : roomPreviewImage ? (
                   <div style={{ position: 'relative', flex: 1, overflow: 'hidden' }}>
                     <img src={roomPreviewImage} alt="Room reference" style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center', display: 'block', filter: 'brightness(0.93)' }} />
-                    <div style={{ position: 'absolute', top: '0.75rem', left: '0.75rem', background: 'rgba(0,0,0,0.55)', color: 'white', fontSize: '0.72rem', fontWeight: '700', padding: '0.3rem 0.7rem', borderRadius: '20px', letterSpacing: '0.06em', backdropFilter: 'blur(4px)', zIndex: 5 }}>BEFORE</div>
                     {isGenerating && (
                       <div style={{ position: 'absolute', inset: 0, background: 'rgba(255,255,255,0.72)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '0.75rem', backdropFilter: 'blur(3px)', zIndex: 10 }}>
                         <Loader2 size={42} color="#9333ea" style={{ animation: 'spin 1s linear infinite' }} />
@@ -486,16 +491,19 @@ const App = () => {
                 ) : (
                   <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                     <div style={{ textAlign: 'center' }}>
-                      <Sparkles size={56} color="#d1d5db" style={{ margin: '0 auto 1rem' }} />
-                      <p style={{ color: '#9ca3af', fontSize: '1rem', marginBottom: '0.4rem', fontWeight: '500' }}>Your AI-generated designs will appear here</p>
-                      <p style={{ color: '#d1d5db', fontSize: '0.8rem' }}>Select a room and style, then click Generate Design</p>
+                                  <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="1.5" style={{ margin: '0 auto 1rem', display: 'block' }}>
+              <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+              <circle cx="8.5" cy="8.5" r="1.5"/>
+              <polyline points="21 15 16 10 5 21"/>
+            </svg>
+            <p style={{ color: '#9ca3af', fontSize: '0.95rem', marginBottom: '0.4rem', fontWeight: '500', textAlign: 'center' }}>The generated image will be displayed</p>
+            <p style={{ color: '#9ca3af', fontSize: '0.95rem', marginBottom: '0.4rem', fontWeight: '500', textAlign: 'center' }}>in this section after processing.</p>
                     </div>
                   </div>
                 )
               ) : (
                 <div style={{ position: 'relative', flex: 1, overflow: 'hidden' }}>
                   <img src={imageHistory[selectedImageIndex].url} alt="Design" style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center', display: 'block' }} />
-                  <div style={{ position: 'absolute', top: '0.75rem', left: '0.75rem', background: 'rgba(147,51,234,0.78)', color: 'white', fontSize: '0.72rem', fontWeight: '700', padding: '0.3rem 0.7rem', borderRadius: '20px', letterSpacing: '0.06em', backdropFilter: 'blur(4px)', zIndex: 5 }}>AFTER</div>
                   <div style={{ position: 'absolute', top: '1rem', right: '1rem', display: 'flex', flexDirection: 'column', gap: '0.4rem', zIndex: 5 }}>
                     {imageHistory.slice(0, 6).map((img, idx) => (
                       <button key={idx} onClick={() => setSelectedImageIndex(idx)} style={{ width: '40px', height: '40px', border: selectedImageIndex === idx ? '2px solid #3b82f6' : '2px solid white', borderRadius: '8px', overflow: 'hidden', cursor: 'pointer', padding: 0, background: 'none', boxShadow: '0 2px 8px rgba(0,0,0,0.2)', flexShrink: 0 }}>
@@ -520,125 +528,192 @@ const App = () => {
       </div>
 
       {/* BOTTOM SECTION */}
-      <div style={{ flex: 1, minHeight: 0, display: 'flex', gap: '1rem' }}>
+      <div style={{ height: '230px', display: 'flex', gap: '1rem' }}>
 
         {/* LIFEECHO CARD */}
-        <div style={{ flex: 1, background: '#eaecef', borderRadius: '16px', padding: '1rem 1.25rem', display: 'flex', flexDirection: 'column', gap: '0.6rem', overflow: 'hidden', minWidth: 0 }}>
-          <h3 style={{ fontSize: '1rem', fontWeight: '700', color: '#1f2937', margin: 0, flexShrink: 0 }}>LifeEcho</h3>
-          {loadingScenarios ? (
-            <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <Loader2 size={28} color="#10b981" style={{ animation: 'spin 1s linear infinite' }} />
-            </div>
-          ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', flex: 1, overflow: 'hidden', justifyContent: 'center' }}>
-              <div style={{ overflow: 'hidden' }}>
-                <div className="marquee-left">
-                  {[...previewScenarios.slice(0, 2), ...previewScenarios.slice(0, 2)].map((scenario, idx) => {
-                    const Icon = iconMap[scenario.icon] || Clock;
-                    return (
-                      <button key={"r1-" + idx} onClick={() => handlePillClick(scenario)} style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.4rem 0.9rem 0.4rem 0.45rem', background: 'white', border: '2px solid #10b981', borderRadius: '50px', cursor: 'pointer', fontSize: '0.82rem', fontWeight: '500', color: '#374151', whiteSpace: 'nowrap', flexShrink: 0, marginRight: '0.6rem', boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
-                        <div style={{ width: '24px', height: '24px', borderRadius: '50%', background: '#10b981', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><Icon size={12} color="white" /></div>
-                        <span>{scenario.title}</span>
-                      </button>
-                    );
-                  })}
+<div style={{ flex: 1, background: '#f5f5f5', borderRadius: '16px', padding: '0.75rem 1.25rem', display: 'flex', flexDirection: 'column', gap: '0.5rem', overflow: 'hidden', minWidth: 0 }}>
+  <h3 style={{ fontSize: '1.1rem', fontWeight: '700', color: '#1f2937', margin: '0 0 0.25rem 0', flexShrink: 0 }}>LifeEcho</h3>
+  {loadingScenarios ? (
+    <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <Loader2 size={28} color="#256D11" style={{ animation: 'spin 1s linear infinite' }} />
+    </div>
+  ) : (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem', flex: 1, overflow: 'hidden', justifyContent: 'space-evenly' }}>
+      <div style={{ overflow: 'hidden' }}>
+        <div className="marquee-left">
+          {[...previewScenarios.slice(0, 2), ...previewScenarios.slice(0, 2)].map((scenario, idx) => {
+            const Icon = iconMap[scenario.icon] || Clock;
+            const isHighlighted = highlightedPillIds.includes(scenario.id);
+            return (
+              <button key={"r1-" + idx} onClick={() => handlePillClick(scenario)} style={{
+                display: 'inline-flex', alignItems: 'center', gap: '0.5rem',
+                padding: '0.5rem 1rem 0.5rem 0.5rem',
+                background: 'white',
+                border: isHighlighted ? '2px solid transparent' : '1.5px solid #d1d5db',
+                backgroundImage: isHighlighted
+                  ? 'linear-gradient(white, white), linear-gradient(to right, #4CAF50, #256D11)'
+                  : 'none',
+                backgroundOrigin: 'border-box',
+                backgroundClip: 'padding-box, border-box',
+                borderRadius: '50px', cursor: 'pointer', fontSize: '0.85rem', fontWeight: '500',
+                color: '#374151', whiteSpace: 'nowrap', flexShrink: 0, marginRight: '0.6rem',
+                boxShadow: isHighlighted ? '0 1px 6px rgba(37,109,17,0.15)' : '0 1px 3px rgba(0,0,0,0.06)'
+              }}>
+                <div style={{ width: '26px', height: '26px', borderRadius: '50%', background: isHighlighted ? 'linear-gradient(to right, #4CAF50, #256D11)' : '#e5e7eb', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  <Icon size={13} color={isHighlighted ? 'white' : '#6b7280'} />
                 </div>
-              </div>
-              <div style={{ overflow: 'hidden' }}>
-                <div className="marquee-right">
-                  {[...previewScenarios.slice(2, 4), ...previewScenarios.slice(2, 4)].map((scenario, idx) => {
-                    const Icon = iconMap[scenario.icon] || Clock;
-                    return (
-                      <button key={"r2-" + idx} onClick={() => handlePillClick(scenario)} style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.4rem 0.9rem 0.4rem 0.45rem', background: 'white', border: '1.5px solid #d1d5db', borderRadius: '50px', cursor: 'pointer', fontSize: '0.82rem', fontWeight: '500', color: '#374151', whiteSpace: 'nowrap', flexShrink: 0, marginRight: '0.6rem', boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
-                        <div style={{ width: '24px', height: '24px', borderRadius: '50%', background: '#e5e7eb', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><Icon size={12} color="#9ca3af" /></div>
-                        <span>{scenario.title}</span>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-              <div style={{ overflow: 'hidden' }}>
-                <div className="marquee-left" style={{ animationDuration: '22s' }}>
-                  {[...previewScenarios.slice(4, 6), ...previewScenarios.slice(4, 6)].map((scenario, idx) => {
-                    const Icon = iconMap[scenario.icon] || Clock;
-                    return (
-                      <button key={"r3-" + idx} onClick={() => handlePillClick(scenario)} style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.4rem 0.9rem 0.4rem 0.45rem', background: 'white', border: '2px solid #10b981', borderRadius: '50px', cursor: 'pointer', fontSize: '0.82rem', fontWeight: '500', color: '#374151', whiteSpace: 'nowrap', flexShrink: 0, marginRight: '0.6rem', boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
-                        <div style={{ width: '24px', height: '24px', borderRadius: '50%', background: '#10b981', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><Icon size={12} color="white" /></div>
-                        <span>{scenario.title}</span>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            </div>
-          )}
+                <span>{scenario.title}</span>
+              </button>
+            );
+          })}
         </div>
+      </div>
+      <div style={{ overflow: 'hidden' }}>
+        <div className="marquee-right">
+          {[...previewScenarios.slice(2, 4), ...previewScenarios.slice(2, 4)].map((scenario, idx) => {
+            const Icon = iconMap[scenario.icon] || Clock;
+            const isHighlighted = highlightedPillIds.includes(scenario.id);
+            return (
+              <button key={"r2-" + idx} onClick={() => handlePillClick(scenario)} style={{
+                display: 'inline-flex', alignItems: 'center', gap: '0.5rem',
+                padding: '0.5rem 1rem 0.5rem 0.5rem',
+                background: 'white',
+                border: isHighlighted ? '2px solid transparent' : '1.5px solid #d1d5db',
+                backgroundImage: isHighlighted
+                  ? 'linear-gradient(white, white), linear-gradient(to right, #4CAF50, #256D11)'
+                  : 'none',
+                backgroundOrigin: 'border-box',
+                backgroundClip: 'padding-box, border-box',
+                borderRadius: '50px', cursor: 'pointer', fontSize: '0.85rem', fontWeight: '500',
+                color: '#374151', whiteSpace: 'nowrap', flexShrink: 0, marginRight: '0.6rem',
+                boxShadow: isHighlighted ? '0 1px 6px rgba(37,109,17,0.15)' : '0 1px 3px rgba(0,0,0,0.06)'
+              }}>
+                <div style={{ width: '26px', height: '26px', borderRadius: '50%', background: isHighlighted ? 'linear-gradient(to right, #4CAF50, #256D11)' : '#e5e7eb', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  <Icon size={13} color={isHighlighted ? 'white' : '#6b7280'} />
+                </div>
+                <span>{scenario.title}</span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+      <div style={{ overflow: 'hidden' }}>
+        <div className="marquee-left" style={{ animationDuration: '22s' }}>
+          {[...previewScenarios.slice(4, 6), ...previewScenarios.slice(4, 6)].map((scenario, idx) => {
+            const Icon = iconMap[scenario.icon] || Clock;
+            const isHighlighted = highlightedPillIds.includes(scenario.id);
+            return (
+              <button key={"r3-" + idx} onClick={() => handlePillClick(scenario)} style={{
+                display: 'inline-flex', alignItems: 'center', gap: '0.5rem',
+                padding: '0.5rem 1rem 0.5rem 0.5rem',
+                background: 'white',
+                border: isHighlighted ? '2px solid transparent' : '1.5px solid #d1d5db',
+                backgroundImage: isHighlighted
+                  ? 'linear-gradient(white, white), linear-gradient(to right, #4CAF50, #256D11)'
+                  : 'none',
+                backgroundOrigin: 'border-box',
+                backgroundClip: 'padding-box, border-box',
+                borderRadius: '50px', cursor: 'pointer', fontSize: '0.85rem', fontWeight: '500',
+                color: '#374151', whiteSpace: 'nowrap', flexShrink: 0, marginRight: '0.6rem',
+                boxShadow: isHighlighted ? '0 1px 6px rgba(37,109,17,0.15)' : '0 1px 3px rgba(0,0,0,0.06)'
+              }}>
+                <div style={{ width: '26px', height: '26px', borderRadius: '50%', background: isHighlighted ? 'linear-gradient(to right, #4CAF50, #256D11)' : '#e5e7eb', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  <Icon size={13} color={isHighlighted ? 'white' : '#6b7280'} />
+                </div>
+                <span>{scenario.title}</span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  )}
+</div>
 
         {/* VIRTUAL TOUR CARD */}
-        <div style={{ flex: 1, background: '#eaecef', borderRadius: '16px', padding: '1rem 1.25rem', display: 'flex', flexDirection: 'column', gap: '0.75rem', minWidth: 0 }}>
-          <h3 style={{ fontSize: '1rem', fontWeight: '700', color: '#1f2937', margin: 0, flexShrink: 0 }}>Virtual Tour</h3>
+<div style={{ flex: 1, background: '#f5f5f5', borderRadius: '16px', padding: '0.75rem 1.25rem', display: 'flex', flexDirection: 'column', gap: '0.5rem', minWidth: 0 }}>
+  <h3 style={{ fontSize: '1.1rem', fontWeight: '700', color: '#1f2937', margin: '0 0 0.25rem 0', flexShrink: 0 }}>Virtual Tour</h3>
 
-          {loadingPlaces ? (
-            <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <Loader2 size={28} color="#3b82f6" style={{ animation: 'spin 1s linear infinite' }} />
-            </div>
-          ) : currentPlace ? (
-            // ✅ Outer wrapper clips the sliding card
-            <div style={{ flex: 1, overflow: 'hidden', borderRadius: '12px', position: 'relative' }}
-              onMouseEnter={() => setIsHoveringTourCard(true)}
-              onMouseLeave={() => setIsHoveringTourCard(false)}
-            >
-              {/* ✅ Sliding card — animates in from left or right */}
-              <div
-                key={displayIndex}
-                style={{
-                  position: 'absolute', inset: 0,
-                  background: 'white', borderRadius: '12px', padding: '1rem',
-                  display: 'flex', alignItems: 'center', gap: '0.85rem',
-                  cursor: 'pointer',
-                  animation: `slideIn${slideDirection === 'left' ? 'Left' : 'Right'} 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards`,
-                }}
-                onClick={handleOpenVirtualTourCard}
-              >
-                <button onClick={(e) => { e.stopPropagation(); handlePrevCategory(); }} style={{ background: '#f3f4f6', border: 'none', borderRadius: '50%', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0 }}>
-                  <ChevronLeft size={18} />
-                </button>
+  {loadingPlaces ? (
+    <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <Loader2 size={28} color="#3b82f6" style={{ animation: 'spin 1s linear infinite' }} />
+    </div>
+  ) : currentPlace ? (
+    <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+      onMouseEnter={() => setIsHoveringTourCard(true)}
+      onMouseLeave={() => setIsHoveringTourCard(false)}
+    >
+      {/* Left Arrow - simple */}
+      <button onClick={handlePrevCategory} style={{ background: 'none', border: 'none', width: '24px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0, padding: 0 }}>
+        <ChevronLeft size={22} color="#374151" />
+      </button>
 
-                {currentPlace.photo_url && (
-                  <img src={currentPlace.photo_url} alt={currentPlace.name} style={{ width: '80px', height: '80px', objectFit: 'cover', borderRadius: '10px', flexShrink: 0 }} />
-                )}
+      {/* White Card */}
+      <div
+        key={displayIndex}
+        style={{
+          flex: 1,
+          background: 'white',
+          borderRadius: '12px',
+          padding: '1.25rem 0.85rem',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '0.85rem',
+          cursor: 'pointer',
+          overflow: 'hidden',
+          animation: `slideIn${slideDirection === 'left' ? 'Left' : 'Right'} 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards`,
+          boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
+        }}
+        onClick={handleOpenVirtualTourCard}
+      >
+        {/* Image */}
+        {currentPlace.photo_url && (
+          <img src={currentPlace.photo_url} alt={currentPlace.name} style={{ width: '72px', height: '72px', objectFit: 'cover', borderRadius: '8px', flexShrink: 0 }} />
+        )}
 
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <h4 style={{ fontSize: '0.95rem', fontWeight: '600', margin: '0 0 0.25rem 0', color: '#1f2937', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {currentPlace.name}
-                  </h4>
-                  <p style={{ fontSize: '0.8rem', color: '#6b7280', margin: '0 0 0.35rem 0' }}>
-                    ~{currentPlace.distance}km • {categories[displayIndex]}
-                  </p>
-                  
-                </div>
-
-                <div style={{ display: 'flex', flexDirection: 'row', gap: '0.5rem', alignItems: 'center', flexShrink: 0 }}>
-                  <button onClick={(e) => { e.stopPropagation(); handleOpenVirtualTourMap(currentPlace); }} style={{ width: '30px', height: '30px', border: 'none', background: 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', padding: 0 }} title="View on map">
-                    <MapPin size={22} color="#3b82f6" strokeWidth={2} />
-                  </button>
-                  <button onClick={(e) => { e.stopPropagation(); handleOpenVirtualTourStreetView(currentPlace); }} style={{ width: '30px', height: '30px', border: 'none', background: 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', padding: 0 }} title="Street View">
-                    <svg width="22" height="22" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                      <circle cx="12" cy="5" r="2" fill="#f97316"/>
-                      <path d="M12 8c-1.5 0-3 .8-3.5 2L7 13h2l1-2v3l-2 5h2l1-3 1 3h2l-2-5v-3l1 2h2l-1.5-3C14 8.8 13.5 8 12 8z" fill="#f97316"/>
-                    </svg>
-                  </button>
-                </div>
-
-                <button onClick={(e) => { e.stopPropagation(); handleNextCategory(); }} style={{ background: '#f3f4f6', border: 'none', borderRadius: '50%', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0 }}>
-                  <ChevronRight size={18} />
-                </button>
-              </div>
-            </div>
-          ) : (
-            <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#9ca3af', fontSize: '0.875rem' }}>No places found</div>
-          )}
+        {/* Info */}
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <h4 style={{ fontSize: '0.95rem', fontWeight: '700', margin: '0 0 0.4rem 0', color: '#1f2937', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            {currentPlace.name}
+          </h4>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+            {/* Distance pill */}
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem', padding: '0.2rem 0.6rem', border: '1.5px solid #d1d5db', borderRadius: '50px', fontSize: '0.75rem', color: '#374151', fontWeight: '600', background: 'white' }}>
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#374151" strokeWidth="2.5"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>
+              ~{currentPlace.distance}km
+            </span>
+            {/* Rating badge */}
+            {currentPlace.rating && (
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem', padding: '0.2rem 0.6rem', background: '#FBBF24', borderRadius: '50px', fontSize: '0.75rem', fontWeight: '600', color: 'white' }}>
+                ★ {currentPlace.rating}
+              </span>
+            )}
+          </div>
         </div>
+
+        {/* Icons */}
+        <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center', flexShrink: 0 }}>
+          <button onClick={(e) => { e.stopPropagation(); handleOpenVirtualTourMap(currentPlace); }} style={{ width: '30px', height: '30px', border: 'none', background: 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', padding: 0 }} title="View on map">
+            <MapPin size={22} color="#3b82f6" strokeWidth={2} />
+          </button>
+          <button onClick={(e) => { e.stopPropagation(); handleOpenVirtualTourStreetView(currentPlace); }} style={{ width: '30px', height: '30px', border: 'none', background: 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', padding: 0 }} title="Street View">
+            <svg width="22" height="22" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="12" cy="5" r="2" fill="#f97316"/>
+              <path d="M12 8c-1.5 0-3 .8-3.5 2L7 13h2l1-2v3l-2 5h2l1-3 1 3h2l-2-5v-3l1 2h2l-1.5-3C14 8.8 13.5 8 12 8z" fill="#f97316"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      {/* Right Arrow - simple */}
+      <button onClick={handleNextCategory} style={{ background: 'none', border: 'none', width: '24px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0, padding: 0 }}>
+        <ChevronRight size={22} color="#374151" />
+      </button>
+    </div>
+  ) : (
+    <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#9ca3af', fontSize: '0.875rem' }}>No places found</div>
+  )}
+</div>
       </div>
 
       <RegistrationModal
