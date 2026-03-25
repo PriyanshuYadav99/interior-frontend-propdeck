@@ -4,7 +4,7 @@ import { X, Loader2, CheckCircle, AlertCircle, Mail, Phone, User } from 'lucide-
 // ✅ FIXED: Use Railway URL instead of localhost
 const API_BASE_URL = 'https://interior-backend-production.up.railway.app';
 
-const RegistrationModal = ({ isOpen, onClose, onSuccess, generatedCount = 0, sessionId }) => {
+const RegistrationModal = ({ isOpen, onClose, onSuccess, generatedCount = 0, sessionId, selectedFlatType }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -74,7 +74,8 @@ const RegistrationModal = ({ isOpen, onClose, onSuccess, generatedCount = 0, ses
           phone_number: phoneNumber.trim(),
           country_code: countryCode,
           session_id: sessionId,
-          generated_count: generatedCount
+          generated_count: generatedCount,
+          property_section: selectedFlatType || null
         })
       });
 

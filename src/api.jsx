@@ -33,7 +33,9 @@ export const generateDesign = async (roomType, style, customPrompt, clientName =
       client_name: clientName,
       model: model,
       width: 1024,
-      height: 1024
+      height: 1024,
+      user_id: localStorage.getItem('userId'),
+      session_id: sessionStorage.getItem('sessionId')
     }),
   });
 

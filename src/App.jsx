@@ -99,10 +99,13 @@ const App = () => {
   ];
 
   const flatTypes = [
-    { id: '5bhk', name: '5BHK' },
-    { id: '4bhk', name: '4BHK' },
-    { id: '3bhk', name: '3BHK' },
-  ];
+  { id: '1bhk', name: '1BHK' },
+  { id: '2bhk', name: '2BHK' },
+  { id: '3bhk', name: '3BHK' },
+  { id: 'villa', name: 'Villa' },
+  { id: 'bungalow', name: 'Bungalow' },
+  { id: 'rowhouse', name: 'Row House' },
+];
 
   useEffect(() => {
     const initializeApp = async () => {
@@ -729,12 +732,13 @@ const App = () => {
       </div>
 
       <RegistrationModal
-        isOpen={showRegistrationModal}
-        onClose={() => { if (isRegistered) setShowRegistrationModal(false); }}
-        onSuccess={handleRegistrationSuccess}
-        generatedCount={generationCount}
-        sessionId={sessionId}
-      />
+  isOpen={showRegistrationModal}
+  onClose={() => { if (isRegistered) setShowRegistrationModal(false); }}
+  onSuccess={handleRegistrationSuccess}
+  generatedCount={generationCount}
+  sessionId={sessionId}
+  selectedFlatType={selectedFlatType}  
+/>
 
       <style>{`
         @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
