@@ -247,6 +247,7 @@ const VirtualTour = ({ onBack, isEmbedded = false, initialPlace = null, initialM
   const handlePlaceClick = async (place) => {
     setSelectedPlace(place);
     setShowStreetView(false);
+    setShowMap(true);
     if (origin) {
       try {
         const result = await getDirections(`${origin.lat},${origin.lng}`, `${place.coordinates.lat},${place.coordinates.lng}`, 'driving');
