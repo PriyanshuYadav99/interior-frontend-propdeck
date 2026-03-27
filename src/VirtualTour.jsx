@@ -18,7 +18,7 @@ const IconMap = { Utensils, GraduationCap, Trees, Cross, Bus, ShoppingCart, Dumb
 
 const BACKEND_URL = 'https://interior-backend-production.up.railway.app';
 const GOOGLE_MAPS_API_KEY = 'AIzaSyAfDoI98BjfukXxFsnXB8qQJPK_0Bi7ntI';
-const APARTMENT_COORDINATES = { lat: 25.0694755, lng: 55.1468862, name: 'VERDE BY SOBHA' };
+const APARTMENT_COORDINATES = { lat: 15.5080647, lng: 73.7719139, name: 'RIO ROYALE' };
 const SEARCH_RADIUS = 5000;
 
 const searchVirtualTour = async (location, category, radius = SEARCH_RADIUS, isCustomSearch = false, isKeywordSearch = false, keyword = '') => {
