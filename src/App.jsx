@@ -109,6 +109,8 @@ const App = () => {
 
   useEffect(() => {
     const initializeApp = async () => {
+      // ✅ Reset tracking timer on every new app load
+      sessionStorage.removeItem('tracking_start_time');
       try {
         const health = await checkHealth();
         setApiStatus(health.status === 'healthy' ? 'connected' : 'disconnected');
@@ -399,8 +401,7 @@ const App = () => {
   const [virtualTourInitialCategory, setVirtualTourInitialCategory] = useState('dining');
 
 const handleOpenVirtualTourMap = (place) => {
-    // ✅ TRACKING: user leaving Room Design to go to Virtual Tour
-    logToolUsage('room_design');
+    setTrackingStartTime();
     setVirtualTourInitialPlace(place);
     setVirtualTourInitialMode('map');
     setVirtualTourInitialCategory(categories[currentCategoryIndex]);
@@ -408,8 +409,7 @@ const handleOpenVirtualTourMap = (place) => {
   };
 
   const handleOpenVirtualTourStreetView = (place) => {
-    // ✅ TRACKING: user leaving Room Design to go to Virtual Tour
-    logToolUsage('room_design');
+    setTrackingStartTime();
     setVirtualTourInitialPlace(place);
     setVirtualTourInitialMode('streetview');
     setVirtualTourInitialCategory(categories[currentCategoryIndex]);
@@ -417,8 +417,7 @@ const handleOpenVirtualTourMap = (place) => {
   };
 
   const handleOpenVirtualTourCard = () => {
-    // ✅ TRACKING: user leaving Room Design to go to Virtual Tour
-    logToolUsage('room_design');
+    setTrackingStartTime();
     setVirtualTourInitialPlace(null);
     setVirtualTourInitialMode('map');
     setVirtualTourInitialCategory(categories[currentCategoryIndex]);
@@ -426,10 +425,9 @@ const handleOpenVirtualTourMap = (place) => {
   };
 
   const handleBackToDefault = () => {
-    // ✅ TRACKING: user coming back to Room Design
-    // log whichever tool they were just using
     if (currentView === 'virtualTour') logToolUsage('virtual_tour');
     if (currentView === 'scenario') logToolUsage('lifeecho');
+    if (currentView === 'default') logToolUsage('room_design');
     setCurrentView('default');
     setSelectedPreviewScenario(null);
     setVirtualTourInitialPlace(null);
@@ -439,7 +437,7 @@ const handleOpenVirtualTourMap = (place) => {
 
   const handlePillClick = (scenario) => {
     // ✅ TRACKING: user leaving Room Design to go to LifeEcho
-    logToolUsage('room_design');
+    setTrackingStartTime();
     setSelectedPreviewScenario(scenario);
     setCurrentView('scenario');
   };

@@ -31,6 +31,7 @@ export const logToolUsage = async (toolName) => {
   try {
     const timeSpent = getTimeSpentSeconds();
     if (timeSpent === 0) return;
+    
     const body = {
       session_id: getSessionId(),
       client_name: getClientName(),
