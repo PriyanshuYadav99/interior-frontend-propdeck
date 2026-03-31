@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { MapPin, Navigation, Star, Search, Loader2, AlertCircle, X, ChevronLeft } from 'lucide-react';
 import { Utensils, GraduationCap, Trees, Cross, Bus, ShoppingCart, Dumbbell } from 'lucide-react';
-import { logVirtualTourSelection, logToolUsage } from './utils/activityTracker';
+import { logVirtualTourSelection, logToolUsage } from './activityTracker';
 const categories = [
   { id: 'dining',     label: 'Dining',     icon: 'Utensils'      },
   { id: 'education',  label: 'Education',  icon: 'GraduationCap' },

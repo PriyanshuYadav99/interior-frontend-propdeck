@@ -6,7 +6,7 @@ import RegistrationModal from './RegistrationModal';
 import LifeEcho from './LifeEcho';
 import VirtualTour from './VirtualTour';
 import './App.css';
-import { setTrackingStartTime, logToolUsage } from './utils/activityTracker';
+import { setTrackingStartTime, logToolUsage } from './activityTracker';
 const getRandomScenarios = async () => {
   const response = await fetch('https://interior-backend-production.up.railway.app/api/scenario/random', {
     method: 'GET',

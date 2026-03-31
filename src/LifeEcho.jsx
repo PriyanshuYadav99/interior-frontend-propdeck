@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { ChevronLeft, Sparkles, X, Loader2, AlertCircle, Clock, VolumeX, Shield, Home, Building, Grid3x3 } from 'lucide-react';
-import { logLifeEchoSelection, logToolUsage } from './utils/activityTracker';
+import { logLifeEchoSelection, logToolUsage } from './activityTracker';
 const generateScenario = async (text) => {
   const response = await fetch('https://interior-backend-production.up.railway.app/api/scenario/generate', {
     method: 'POST',
