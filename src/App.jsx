@@ -6,7 +6,7 @@ import RegistrationModal from './RegistrationModal';
 import LifeEcho from './LifeEcho';
 import VirtualTour from './VirtualTour';
 import './App.css';
-
+import { setTrackingStartTime, logToolUsage } from './utils/activityTracker';
 const getRandomScenarios = async () => {
   const response = await fetch('https://interior-backend-production.up.railway.app/api/scenario/random', {
     method: 'GET',
@@ -331,6 +331,8 @@ const App = () => {
       setProgress(50);
       if (!result.success) throw new Error(result.error || 'Failed to generate');
       setProgress(80);
+      // ✅ START TRACKING on first image generation
+      setTrackingStartTime();
       const processedImages = [{
         id: result.images[0].id || Date.now(),
         url: result.images[0].image_url || result.images[0].cloudinary_url || `data:image/png;base64,${result.images[0].image_base64}`,
@@ -396,7 +398,9 @@ const App = () => {
   const [virtualTourInitialMode, setVirtualTourInitialMode] = useState('map');
   const [virtualTourInitialCategory, setVirtualTourInitialCategory] = useState('dining');
 
-  const handleOpenVirtualTourMap = (place) => {
+const handleOpenVirtualTourMap = (place) => {
+    // ✅ TRACKING: user leaving Room Design to go to Virtual Tour
+    logToolUsage('room_design');
     setVirtualTourInitialPlace(place);
     setVirtualTourInitialMode('map');
     setVirtualTourInitialCategory(categories[currentCategoryIndex]);
@@ -404,6 +408,8 @@ const App = () => {
   };
 
   const handleOpenVirtualTourStreetView = (place) => {
+    // ✅ TRACKING: user leaving Room Design to go to Virtual Tour
+    logToolUsage('room_design');
     setVirtualTourInitialPlace(place);
     setVirtualTourInitialMode('streetview');
     setVirtualTourInitialCategory(categories[currentCategoryIndex]);
@@ -411,6 +417,8 @@ const App = () => {
   };
 
   const handleOpenVirtualTourCard = () => {
+    // ✅ TRACKING: user leaving Room Design to go to Virtual Tour
+    logToolUsage('room_design');
     setVirtualTourInitialPlace(null);
     setVirtualTourInitialMode('map');
     setVirtualTourInitialCategory(categories[currentCategoryIndex]);
@@ -418,6 +426,10 @@ const App = () => {
   };
 
   const handleBackToDefault = () => {
+    // ✅ TRACKING: user coming back to Room Design
+    // log whichever tool they were just using
+    if (currentView === 'virtualTour') logToolUsage('virtual_tour');
+    if (currentView === 'scenario') logToolUsage('lifeecho');
     setCurrentView('default');
     setSelectedPreviewScenario(null);
     setVirtualTourInitialPlace(null);
@@ -426,6 +438,8 @@ const App = () => {
   };
 
   const handlePillClick = (scenario) => {
+    // ✅ TRACKING: user leaving Room Design to go to LifeEcho
+    logToolUsage('room_design');
     setSelectedPreviewScenario(scenario);
     setCurrentView('scenario');
   };

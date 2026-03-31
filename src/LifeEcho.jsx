@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { ChevronLeft, Sparkles, X, Loader2, AlertCircle, Clock, VolumeX, Shield, Home, Building, Grid3x3 } from 'lucide-react';
-
+import { logLifeEchoSelection, logToolUsage } from './utils/activityTracker';
 const generateScenario = async (text) => {
   const response = await fetch('https://interior-backend-production.up.railway.app/api/scenario/generate', {
     method: 'POST',
@@ -34,7 +34,12 @@ const LifeEcho = ({ onBack, isEmbedded = false, initialScenario = null }) => {
 
   useEffect(() => { loadInitialScenarios(); }, []);
   useEffect(() => { if (initialScenario) setSelectedScenario(initialScenario); }, [initialScenario]);
-
+  // ✅ TRACKING: log time spent when component unmounts
+  useEffect(() => {
+    return () => {
+      logToolUsage('lifeecho');
+    };
+  }, []);
   const loadInitialScenarios = async () => {
     try {
       const result = await getRandomScenarios();
@@ -70,6 +75,13 @@ const LifeEcho = ({ onBack, isEmbedded = false, initialScenario = null }) => {
       if (result.success) {
         const newScenario = { id: Date.now(), title: result.title, story: result.story, tagline: result.tagline, icon: 'building', category: 'custom' };
         setScenarios([newScenario, ...scenarios]);
+
+        // ✅ TRACKING: log custom scenario
+        logLifeEchoSelection({
+          isCustom: true,
+          customText: scenarioText,
+        });
+
         setScenarioText('');
         setSelectedScenario(newScenario);
       } else {
@@ -159,7 +171,16 @@ const LifeEcho = ({ onBack, isEmbedded = false, initialScenario = null }) => {
                   const Icon = iconMap[scenario.icon] || Building;
                   const isHighlighted = highlightedIds.includes(scenario.id);
                   return (
-                    <button key={scenario.id} onClick={() => !isGenerating && !isGeneratingMore && setSelectedScenario(scenario)}
+                    <button key={scenario.id} onClick={() => {
+  if (isGenerating || isGeneratingMore) return;
+  setSelectedScenario(scenario);
+  // ✅ TRACKING: log pre-generated scenario selection
+  logLifeEchoSelection({
+    isCustom: false,
+    scenarioId: scenario.id,
+    scenarioTitle: scenario.title,
+  });
+}}
                       style={{
                         display: 'inline-flex', alignItems: 'center', gap: '0.6rem',
                         padding: '0.65rem 1.1rem',

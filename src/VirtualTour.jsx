@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { MapPin, Navigation, Star, Search, Loader2, AlertCircle, X, ChevronLeft } from 'lucide-react';
 import { Utensils, GraduationCap, Trees, Cross, Bus, ShoppingCart, Dumbbell } from 'lucide-react';
-
+import { logVirtualTourSelection, logToolUsage } from './utils/activityTracker';
 const categories = [
   { id: 'dining',     label: 'Dining',     icon: 'Utensils'      },
   { id: 'education',  label: 'Education',  icon: 'GraduationCap' },
@@ -64,11 +64,20 @@ const VirtualTour = ({ onBack, isEmbedded = false, initialPlace = null, initialM
   const [streetViewPlace, setStreetViewPlace] = useState(null);
   const initialHandled = useRef(false);
 
+  
+
   const mapRef = useRef(null);
   const googleMapRef = useRef(null);
   const markersRef = useRef([]);
   const directionsRendererRef = useRef(null);
   const streetViewRef = useRef(null);
+
+  // ✅ TRACKING: log time spent when user leaves Virtual Tour
+  useEffect(() => {
+    return () => {
+      logToolUsage('virtual_tour');
+    };
+  }, []);
 
   useEffect(() => {
     if (!window.google) {
@@ -248,6 +257,10 @@ const VirtualTour = ({ onBack, isEmbedded = false, initialPlace = null, initialM
     setSelectedPlace(place);
     setShowStreetView(false);
     setShowMap(true);
+
+    // ✅ TRACKING: log which place was clicked
+    logVirtualTourSelection(selectedCategory, place.name, place.id);
+
     if (origin) {
       try {
         const result = await getDirections(`${origin.lat},${origin.lng}`, `${place.coordinates.lat},${place.coordinates.lng}`, 'driving');
@@ -273,6 +286,9 @@ const VirtualTour = ({ onBack, isEmbedded = false, initialPlace = null, initialM
   const handleCategoryChange = (categoryId) => {
     setSelectedCategory(categoryId); setSelectedPlace(null); setDirections(null);
     setSearchLocation(''); setIsCustomSearch(false); setShowStreetView(false);
+
+    // ✅ TRACKING: log category change
+    logVirtualTourSelection(categoryId, null, null);
     setOrigin({ lat: APARTMENT_COORDINATES.lat, lng: APARTMENT_COORDINATES.lng, name: APARTMENT_COORDINATES.name });
     setLoading(true); setError('');
     searchVirtualTour(`${APARTMENT_COORDINATES.lat},${APARTMENT_COORDINATES.lng}`, categoryId, SEARCH_RADIUS, false)
