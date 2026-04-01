@@ -51,7 +51,7 @@ export const logToolUsage = async (toolName) => {
   }
 };
 
-export const logVirtualTourSelection = async (category, placeName, placeId) => {
+export const logVirtualTourSelection = async (category, placeName, placeId, photoUrl) => {
   try {
     const body = {
       session_id: getSessionId(),
@@ -60,6 +60,7 @@ export const logVirtualTourSelection = async (category, placeName, placeId) => {
       vt_category: category,
       vt_place_name: placeName || '',
       vt_place_id: placeId || '',
+      vt_photo_url: photoUrl || '',
     };
     const userId = getUserId();
     if (userId) body.user_id = userId;
