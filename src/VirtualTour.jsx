@@ -258,8 +258,17 @@ const VirtualTour = ({ onBack, isEmbedded = false, initialPlace = null, initialM
     setShowStreetView(false);
     setShowMap(true);
 
-    // ✅ TRACKING: log which place was clicked
-    logVirtualTourSelection(selectedCategory, place.name, place.id, place.photo_url, place.distance, place.rating);
+    // ✅ TRACKING: only log if place has a real ID
+    if (place?.id && place?.name) {
+      logVirtualTourSelection(
+        selectedCategory,
+        place.name,
+        place.id,
+        place.photo_url || null,
+        place.distance || null,
+        place.rating || null
+      );
+    }
 
     if (origin) {
       try {
@@ -287,8 +296,7 @@ const VirtualTour = ({ onBack, isEmbedded = false, initialPlace = null, initialM
     setSelectedCategory(categoryId); setSelectedPlace(null); setDirections(null);
     setSearchLocation(''); setIsCustomSearch(false); setShowStreetView(false);
 
-    // ✅ TRACKING: log category change
-    logVirtualTourSelection(categoryId, null, null, null);
+    
     setOrigin({ lat: APARTMENT_COORDINATES.lat, lng: APARTMENT_COORDINATES.lng, name: APARTMENT_COORDINATES.name });
     setLoading(true); setError('');
     searchVirtualTour(`${APARTMENT_COORDINATES.lat},${APARTMENT_COORDINATES.lng}`, categoryId, SEARCH_RADIUS, false)

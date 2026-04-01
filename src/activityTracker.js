@@ -52,17 +52,23 @@ export const logToolUsage = async (toolName) => {
 };
 
 export const logVirtualTourSelection = async (category, placeName, placeId, photoUrl, distance, rating) => {
+  // ✅ Skip if no real place selected
+  if (!placeId) {
+    console.warn('[Tracker] Skipping VT log — no placeId');
+    return;
+  }
+
   try {
     const body = {
       session_id: getSessionId(),
       client_name: getClientName(),
       tool_name: 'virtual_tour',
       vt_category: category,
-      vt_place_name: placeName || '',
-      vt_place_id: placeId || '',
-      vt_photo_url: photoUrl || '',
-      vt_distance: distance || '',
-      vt_rating: rating || '',
+      vt_place_name: placeName || null,   // ✅ null not ''
+      vt_place_id: placeId || null,
+      vt_photo_url: photoUrl || null,
+      vt_distance: distance || null,
+      vt_rating: rating || null,
     };
     const userId = getUserId();
     if (userId) body.user_id = userId;
