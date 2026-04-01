@@ -259,7 +259,7 @@ const VirtualTour = ({ onBack, isEmbedded = false, initialPlace = null, initialM
     setShowMap(true);
 
     // ✅ TRACKING: log which place was clicked
-    logVirtualTourSelection(selectedCategory, place.name, place.id, place.photo_url);
+    logVirtualTourSelection(selectedCategory, place.name, place.id, place.photo_url, place.distance, place.rating);
 
     if (origin) {
       try {

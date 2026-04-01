@@ -176,10 +176,11 @@ const LifeEcho = ({ onBack, isEmbedded = false, initialScenario = null }) => {
   setSelectedScenario(scenario);
   // ✅ TRACKING: log pre-generated scenario selection
   logLifeEchoSelection({
-    isCustom: false,
-    scenarioId: scenario.id,
-    scenarioTitle: scenario.title,
-  });
+  isCustom: false,
+  scenarioId: scenario.id,
+  scenarioTitle: scenario.title,
+  scenarioIcon: scenario.icon || 'clock',
+});
 }}
                       style={{
                         display: 'inline-flex', alignItems: 'center', gap: '0.6rem',

@@ -51,7 +51,7 @@ export const logToolUsage = async (toolName) => {
   }
 };
 
-export const logVirtualTourSelection = async (category, placeName, placeId, photoUrl) => {
+export const logVirtualTourSelection = async (category, placeName, placeId, photoUrl, distance, rating) => {
   try {
     const body = {
       session_id: getSessionId(),
@@ -61,6 +61,8 @@ export const logVirtualTourSelection = async (category, placeName, placeId, phot
       vt_place_name: placeName || '',
       vt_place_id: placeId || '',
       vt_photo_url: photoUrl || '',
+      vt_distance: distance || '',
+      vt_rating: rating || '',
     };
     const userId = getUserId();
     if (userId) body.user_id = userId;
@@ -75,7 +77,7 @@ export const logVirtualTourSelection = async (category, placeName, placeId, phot
   }
 };
 
-export const logLifeEchoSelection = async ({ isCustom, scenarioId = null, scenarioTitle = '', customText = '' }) => {
+export const logLifeEchoSelection = async ({ isCustom, scenarioId = null, scenarioTitle = '', scenarioIcon = 'clock', customText = '' }) => {
   try {
     const body = {
       session_id: getSessionId(),
@@ -88,6 +90,7 @@ export const logLifeEchoSelection = async ({ isCustom, scenarioId = null, scenar
     } else {
       body.lifeecho_scenario_id = scenarioId;
       body.lifeecho_scenario_title = scenarioTitle;
+      body.lifeecho_scenario_icon = scenarioIcon;
     }
     const userId = getUserId();
     if (userId) body.user_id = userId;
