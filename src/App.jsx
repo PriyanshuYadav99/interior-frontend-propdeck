@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { Sparkles,Palette, Download, Home, Bed, Briefcase, Loader2, AlertCircle, CheckCircle, Sofa, ChevronDown, Grid3x3, MapPin, Bath, Utensils, X, ChevronLeft, ChevronRight, Clock, VolumeX, Shield, Building, Maximize2, Factory, AlignJustify, Crown, Flower2, TreePine } from 'lucide-react';
 import { generateDesign, checkHealth, checkSession, incrementGeneration } from './api';
@@ -6,7 +5,8 @@ import RegistrationModal from './RegistrationModal';
 import LifeEcho from './LifeEcho';
 import VirtualTour from './VirtualTour';
 import './App.css';
-import { setTrackingStartTime, logToolUsage } from './activityTracker';
+import { logToolUsage, createVisibilityTracker } from './activityTracker';
+
 const getRandomScenarios = async () => {
   const response = await fetch('https://interior-backend-production.up.railway.app/api/scenario/random', {
     method: 'GET',
@@ -61,9 +61,11 @@ const App = () => {
   const [previewScenarios, setPreviewScenarios] = useState([]);
   const [loadingScenarios, setLoadingScenarios] = useState(false);
   const [currentCategoryIndex, setCurrentCategoryIndex] = useState(0);
-  const [isHoveringTourCard, setIsHoveringTourCard] = useState(false);
   const [highlightedPillIds, setHighlightedPillIds] = useState([]);
   const autoScrollTimerRef = useRef(null);
+  const roomDesignRef = useRef(null);
+  const virtualTourRef = useRef(null);
+  const lifeEchoRef = useRef(null);
 
   const [slideDirection, setSlideDirection] = useState('left');
   const [isSliding, setIsSliding] = useState(false);
@@ -77,7 +79,6 @@ const App = () => {
   const [showBeforePreview, setShowBeforePreview] = useState(false);
   const [selectedFlatType, setSelectedFlatType] = useState('');
 
-  // ✅ NEW: cache for room preview images
   const [roomPreviewCache, setRoomPreviewCache] = useState({});
 
   const categories = ['dining', 'education', 'nature', 'health', 'transport', 'shop', 'gym'];
@@ -99,17 +100,16 @@ const App = () => {
   ];
 
   const flatTypes = [
-  { id: '1bhk', name: '1BHK' },
-  { id: '2bhk', name: '2BHK' },
-  { id: '3bhk', name: '3BHK' },
-  { id: 'villa', name: 'Villa' },
-  { id: 'bungalow', name: 'Bungalow' },
-  { id: 'rowhouse', name: 'Row House' },
-];
+    { id: '1bhk', name: '1BHK' },
+    { id: '2bhk', name: '2BHK' },
+    { id: '3bhk', name: '3BHK' },
+    { id: 'villa', name: 'Villa' },
+    { id: 'bungalow', name: 'Bungalow' },
+    { id: 'rowhouse', name: 'Row House' },
+  ];
 
   useEffect(() => {
     const initializeApp = async () => {
-      // ✅ Reset tracking timer on every new app load
       sessionStorage.removeItem('tracking_start_time');
       try {
         const health = await checkHealth();
@@ -153,9 +153,32 @@ const App = () => {
   }, []);
 
   useEffect(() => { loadPreviewScenarios(); }, []);
+
+  // ✅ Visibility tracking — timers start/stop when tools enter/leave screen
+  useEffect(() => {
+    const roomObserver     = createVisibilityTracker('room_design', roomDesignRef);
+    const vtObserver       = createVisibilityTracker('virtual_tour', virtualTourRef);
+    const lifeEchoObserver = createVisibilityTracker('lifeecho', lifeEchoRef);
+    return () => {
+      roomObserver.disconnect();
+      vtObserver.disconnect();
+      lifeEchoObserver.disconnect();
+    };
+  }, []);
+
   useEffect(() => { loadAllPlaces(); }, []);
 
-  // ✅ NEW: preload all 3 room images silently on mount
+// ✅ ADD THIS — log all tools when user closes/leaves the page
+useEffect(() => {
+  const handleBeforeUnload = () => {
+    logToolUsage('room_design');
+    logToolUsage('virtual_tour');
+    logToolUsage('lifeecho');
+  };
+  window.addEventListener('beforeunload', handleBeforeUnload);
+  return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+}, []);
+
   useEffect(() => {
     const preloadAllRooms = async () => {
       const cache = {};
@@ -195,8 +218,9 @@ const App = () => {
     }, 350);
   };
 
+  // ✅ Removed isHoveringTourCard from condition
   useEffect(() => {
-    if (currentView !== 'default' || isHoveringTourCard) {
+    if (currentView !== 'default') {
       clearInterval(autoScrollTimerRef.current);
       return;
     }
@@ -205,7 +229,7 @@ const App = () => {
       slideTo(next, 'left');
     }, 7000);
     return () => clearInterval(autoScrollTimerRef.current);
-  }, [currentView, isHoveringTourCard, currentCategoryIndex, isSliding]);
+  }, [currentView, currentCategoryIndex, isSliding]);
 
   const loadPreviewScenarios = async () => {
     setLoadingScenarios(true);
@@ -271,17 +295,12 @@ const App = () => {
     }
   };
 
-  // ✅ UPDATED: loadRoomPreview now checks cache first — instant if cached
   const loadRoomPreview = async (roomId) => {
     setShowBeforePreview(true);
-
-    // If already cached → show instantly, no spinner, no fetch
     if (roomPreviewCache[roomId]) {
       setRoomPreviewImage(roomPreviewCache[roomId]);
       return;
     }
-
-    // Not cached yet → fetch and save to cache
     setLoadingPreview(true);
     setRoomPreviewImage(null);
     try {
@@ -333,8 +352,7 @@ const App = () => {
       setProgress(50);
       if (!result.success) throw new Error(result.error || 'Failed to generate');
       setProgress(80);
-      // ✅ START TRACKING on first image generation
-      setTrackingStartTime();
+      // ✅ No setTrackingStartTime here anymore — visibility tracker handles it
       const processedImages = [{
         id: result.images[0].id || Date.now(),
         url: result.images[0].image_url || result.images[0].cloudinary_url || `data:image/png;base64,${result.images[0].image_base64}`,
@@ -400,8 +418,8 @@ const App = () => {
   const [virtualTourInitialMode, setVirtualTourInitialMode] = useState('map');
   const [virtualTourInitialCategory, setVirtualTourInitialCategory] = useState('dining');
 
-const handleOpenVirtualTourMap = (place) => {
-    setTrackingStartTime();
+  // ✅ Removed setTrackingStartTime() from all handlers
+  const handleOpenVirtualTourMap = (place) => {
     setVirtualTourInitialPlace(place);
     setVirtualTourInitialMode('map');
     setVirtualTourInitialCategory(categories[currentCategoryIndex]);
@@ -409,7 +427,6 @@ const handleOpenVirtualTourMap = (place) => {
   };
 
   const handleOpenVirtualTourStreetView = (place) => {
-    setTrackingStartTime();
     setVirtualTourInitialPlace(place);
     setVirtualTourInitialMode('streetview');
     setVirtualTourInitialCategory(categories[currentCategoryIndex]);
@@ -417,7 +434,6 @@ const handleOpenVirtualTourMap = (place) => {
   };
 
   const handleOpenVirtualTourCard = () => {
-    setTrackingStartTime();
     setVirtualTourInitialPlace(null);
     setVirtualTourInitialMode('map');
     setVirtualTourInitialCategory(categories[currentCategoryIndex]);
@@ -436,8 +452,7 @@ const handleOpenVirtualTourMap = (place) => {
   };
 
   const handlePillClick = (scenario) => {
-    // ✅ TRACKING: user leaving Room Design to go to LifeEcho
-    setTrackingStartTime();
+    // ✅ Removed setTrackingStartTime() — visibility tracker handles it
     setSelectedPreviewScenario(scenario);
     setCurrentView('scenario');
   };
@@ -445,7 +460,6 @@ const handleOpenVirtualTourMap = (place) => {
   const shouldShowBefore = showBeforePreview || imageHistory.length === 0;
   const currentPlace = placesCache[categories[displayIndex]];
 
-  // Reusable pill renderer
   const renderPill = (scenario, idx, keyPrefix) => {
     const Icon = iconMap[scenario.icon] || Clock;
     const isHighlighted = highlightedPillIds.includes(scenario.id);
@@ -497,8 +511,8 @@ const handleOpenVirtualTourMap = (place) => {
 
         {currentView === 'default' && (
           <>
-            {/* LEFT */}
-            <div style={{ width: '48%', flexShrink: 0, display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+            {/* LEFT — Room Design (ref for visibility tracking) */}
+            <div ref={roomDesignRef} style={{ width: '48%', flexShrink: 0, display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
               <div style={{ background: 'white', borderRadius: '16px', padding: '1rem', boxSizing: 'border-box', overflow: 'hidden' }}>
 
                 {/* FLAT TYPE */}
@@ -557,17 +571,10 @@ const handleOpenVirtualTourMap = (place) => {
                         onChange={(e) => { setCustomPrompt(e.target.value); if (e.target.value.trim()) setSelectedStyle(''); }}
                         placeholder="Describe your style (e.g., Space theme kids room...)"
                         style={{
-                          width: '100%',
-                          padding: '0.55rem',
+                          width: '100%', padding: '0.55rem',
                           border: customPrompt.trim() ? '2px solid #9333ea' : '1px solid #e5e7eb',
-                          borderRadius: '6px',
-                          resize: 'none',
-                          height: '2.8rem',
-                          fontSize: '0.8rem',
-                          outline: 'none',
-                          fontFamily: 'inherit',
-                          boxSizing: 'border-box',
-                          color: '#374151'
+                          borderRadius: '6px', resize: 'none', height: '2.8rem', fontSize: '0.8rem',
+                          outline: 'none', fontFamily: 'inherit', boxSizing: 'border-box', color: '#374151'
                         }}
                       />
                     </div>
@@ -647,8 +654,8 @@ const handleOpenVirtualTourMap = (place) => {
       {/* BOTTOM SECTION */}
       <div style={{ height: '180px', display: 'flex', gap: '1rem' }}>
 
-        {/* LIFEECHO CARD */}
-        <div style={{ flex: 1, background: '#f5f5f5', borderRadius: '16px', padding: '0.75rem 1.25rem', display: 'flex', flexDirection: 'column', gap: '0.5rem', overflow: 'hidden', minWidth: 0 }}>
+        {/* LIFEECHO CARD — ref for visibility tracking */}
+        <div ref={lifeEchoRef} style={{ flex: 1, background: '#f5f5f5', borderRadius: '16px', padding: '0.75rem 1.25rem', display: 'flex', flexDirection: 'column', gap: '0.5rem', overflow: 'hidden', minWidth: 0 }}>
           <h3 style={{ fontSize: '1.1rem', fontWeight: '700', color: '#1f2937', margin: '0 0 0.25rem 0', flexShrink: 0 }}>LifeEcho</h3>
           {loadingScenarios ? (
             <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -674,8 +681,8 @@ const handleOpenVirtualTourMap = (place) => {
           )}
         </div>
 
-        {/* VIRTUAL TOUR CARD */}
-        <div style={{ flex: 1, background: '#f5f5f5', borderRadius: '16px', padding: '0.75rem 1.25rem', display: 'flex', flexDirection: 'column', gap: '0.5rem', minWidth: 0 }}>
+        {/* VIRTUAL TOUR CARD — ref for visibility tracking */}
+        <div ref={virtualTourRef} style={{ flex: 1, background: '#f5f5f5', borderRadius: '16px', padding: '0.75rem 1.25rem', display: 'flex', flexDirection: 'column', gap: '0.5rem', minWidth: 0 }}>
           <h3 style={{ fontSize: '1.1rem', fontWeight: '700', color: '#1f2937', margin: '0 0 0.25rem 0', flexShrink: 0 }}>Virtual Tour</h3>
 
           {loadingPlaces ? (
@@ -683,10 +690,7 @@ const handleOpenVirtualTourMap = (place) => {
               <Loader2 size={28} color="#3b82f6" style={{ animation: 'spin 1s linear infinite' }} />
             </div>
           ) : currentPlace ? (
-            <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: '0.5rem' }}
-              onMouseEnter={() => setIsHoveringTourCard(true)}
-              onMouseLeave={() => setIsHoveringTourCard(false)}
-            >
+            <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
               <button onClick={handlePrevCategory} style={{ background: 'none', border: 'none', width: '24px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0, padding: 0 }}>
                 <ChevronLeft size={22} color="#374151" />
               </button>
@@ -744,13 +748,13 @@ const handleOpenVirtualTourMap = (place) => {
       </div>
 
       <RegistrationModal
-  isOpen={showRegistrationModal}
-  onClose={() => { if (isRegistered) setShowRegistrationModal(false); }}
-  onSuccess={handleRegistrationSuccess}
-  generatedCount={generationCount}
-  sessionId={sessionId}
-  selectedFlatType={selectedFlatType}  
-/>
+        isOpen={showRegistrationModal}
+        onClose={() => { if (isRegistered) setShowRegistrationModal(false); }}
+        onSuccess={handleRegistrationSuccess}
+        generatedCount={generationCount}
+        sessionId={sessionId}
+        selectedFlatType={selectedFlatType}
+      />
 
       <style>{`
         @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
@@ -759,7 +763,6 @@ const handleOpenVirtualTourMap = (place) => {
         .marquee-left { display: inline-flex; animation: marquee-left 50s linear infinite; width: max-content; }
         .marquee-right { display: inline-flex; animation: marquee-right 50s linear infinite; width: max-content; }
         .marquee-left:hover, .marquee-right:hover { animation-play-state: paused; }
-
         @keyframes slideInLeft {
           from { transform: translateX(100%); opacity: 0; }
           to   { transform: translateX(0);    opacity: 1; }
@@ -768,7 +771,6 @@ const handleOpenVirtualTourMap = (place) => {
           from { transform: translateX(-100%); opacity: 0; }
           to   { transform: translateX(0);     opacity: 1; }
         }
-
         * { box-sizing: border-box; }
         ::-webkit-scrollbar { width: 4px; height: 4px; }
         ::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 10px; }

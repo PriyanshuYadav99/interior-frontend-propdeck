@@ -36,10 +36,10 @@ const LifeEcho = ({ onBack, isEmbedded = false, initialScenario = null }) => {
   useEffect(() => { if (initialScenario) setSelectedScenario(initialScenario); }, [initialScenario]);
   // ✅ TRACKING: log time spent when component unmounts
   useEffect(() => {
-    return () => {
-      logToolUsage('lifeecho');
-    };
-  }, []);
+  return () => {
+    logToolUsage('lifeecho');
+  };
+}, []);
   const loadInitialScenarios = async () => {
     try {
       const result = await getRandomScenarios();

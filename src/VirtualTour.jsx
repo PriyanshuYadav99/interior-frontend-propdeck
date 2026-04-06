@@ -3,7 +3,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { MapPin, Navigation, Star, Search, Loader2, AlertCircle, X, ChevronLeft } from 'lucide-react';
 import { Utensils, GraduationCap, Trees, Cross, Bus, ShoppingCart, Dumbbell } from 'lucide-react';
-import { logVirtualTourSelection, logToolUsage } from './activityTracker';
+import { logToolUsage, logVirtualTourSelection } from './activityTracker';
+
 const categories = [
   { id: 'dining',     label: 'Dining',     icon: 'Utensils'      },
   { id: 'education',  label: 'Education',  icon: 'GraduationCap' },
@@ -72,12 +73,11 @@ const VirtualTour = ({ onBack, isEmbedded = false, initialPlace = null, initialM
   const directionsRendererRef = useRef(null);
   const streetViewRef = useRef(null);
 
-  // ✅ TRACKING: log time spent when user leaves Virtual Tour
-  useEffect(() => {
-    return () => {
-      logToolUsage('virtual_tour');
-    };
-  }, []);
+useEffect(() => {
+  return () => {
+    logToolUsage('virtual_tour');
+  };
+}, []);
 
   useEffect(() => {
     if (!window.google) {
