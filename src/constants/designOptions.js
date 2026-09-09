@@ -40,4 +40,5 @@ export const NAV_TABS = [
   { id: "default", label: "Room design" },
   { id: "scenario", label: "Living insight" },
   { id: "virtualTour", label: "Explore nearby" },
+  { id: "localWatch", label: "Local watch" },
 ];

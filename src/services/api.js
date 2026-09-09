@@ -213,6 +213,44 @@ export const getPreGeneratedScenarios = async () => {
 };
 
 // ============================================
+// ✅ LOCAL WATCH / AREA NEWS FUNCTIONS (NEW)
+// ============================================
+
+/**
+ * Fetch local area news cards for a zip code
+ * @param {string} zipCode - Postal/PIN code
+ * @param {string} [locality] - Optional locality/society name hint
+ * @returns {Promise<Object>} - { success, location, cards, categories, articles, cached }
+ */
+export const fetchAreaNews = async (zipCode, locality) => {
+  console.log("[API] fetchAreaNews called with:", { zipCode, locality });
+
+  const params = new URLSearchParams({ zip_code: zipCode });
+  if (locality) params.append("locality", locality);
+
+  const response = await fetch(
+    `${API_BASE_URL}/api/news/area?${params.toString()}`,
+    {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    },
+  );
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    console.error("[API] fetchAreaNews failed:", errorData);
+    throw new Error(errorData.error || "Failed to fetch area news");
+  }
+
+  const result = await response.json();
+  console.log("[API] fetchAreaNews result:", result);
+  return result;
+};
+
+
+// ============================================
 // ✅ VIRTUAL TOUR FUNCTIONS (NEW)
 // ============================================
 
