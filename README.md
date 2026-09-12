@@ -1,4 +1,4 @@
-# PropDeck — Property AI Frontend
+# Sightro — Property AI Frontend
 
 React + Vite frontend for the interior design / property exploration app
 (room design generation, "Living insight" scenarios, and "Explore nearby"
