@@ -1,10 +1,77 @@
 import React, { useState, useEffect, useRef } from "react";
 import { ChevronLeft, ChevronRight, Home, Loader2 } from "lucide-react";
 import { fetchAreaNews } from "../../services/api";
+import comingSoonImg from "../../assets/local-watch-coming-soon.png";
+
+// ------------------------------------------------------------
+// Set to false when Local Watch is ready to launch.
+// While true: the "Coming soon" screen is shown and the news API is NOT called.
+// ------------------------------------------------------------
+const COMING_SOON = true;
 
 const CARD_WIDTH = 466;
 const CARD_GAP = 16;
 
+// ------------------------------------------------------------
+// "Coming soon" screen (matches the Figma)
+// Illustration file: src/assets/local-watch-coming-soon.png
+// ------------------------------------------------------------
+const ComingSoon = () => (
+  <div
+    style={{
+      flex: 1,
+      minHeight: "360px",
+      display: "flex",
+      flexDirection: "column",
+      alignItems: "center",
+      justifyContent: "center",
+      textAlign: "center",
+      padding: "1.5rem",
+      gap: "0.75rem",
+    }}
+  >
+    <img
+      src={comingSoonImg}
+      alt="Location pin, buildings and a notification bell"
+      width={718}
+      height={372}
+      style={{ width: "100%", maxWidth: "380px", height: "auto" }}
+    />
+    <h3
+      style={{
+        margin: "0.5rem 0 0",
+        fontFamily: "'Sora', sans-serif", // Figma: Sora SemiBold
+        fontSize: "32px",
+        fontWeight: 600,
+        lineHeight: 1.3, // 130%
+        letterSpacing: "0.16px",
+        textAlign: "center",
+        color: "#1f2937",
+      }}
+    >
+      Local Watch is coming soon
+    </h3>
+    <p
+      style={{
+        margin: 0,
+        maxWidth: "620px",
+        fontFamily: "'Sora', sans-serif",
+        fontSize: "18px", // estimate: confirm by clicking the subtitle in Figma
+        fontWeight: 400,
+        lineHeight: 1.6,
+        textAlign: "center",
+        color: "#4b5563",
+      }}
+    >
+      We're building a smarter way to explore what's happening around your
+      property - from local development to nearby amenities.
+    </p>
+  </div>
+);
+
+// ------------------------------------------------------------
+// Local Watch
+// ------------------------------------------------------------
 const LocalWatch = ({ onBack, zipCode }) => {
   const [cards, setCards] = useState([]);
   const [categories, setCategories] = useState([]);
@@ -17,6 +84,7 @@ const LocalWatch = ({ onBack, zipCode }) => {
   const scrollRef = useRef(null);
 
   useEffect(() => {
+    if (COMING_SOON) return; // don't call the news API while the feature is hidden
     if (!zipCode) return;
     const load = async () => {
       setLoading(true);
@@ -57,6 +125,22 @@ const LocalWatch = ({ onBack, zipCode }) => {
     // reset scroll position whenever the filtered set changes
     if (scrollRef.current) scrollRef.current.scrollLeft = 0;
   }, [filteredCards.length, activeCategory]);
+
+  // All hooks are above this line, so this early return is safe.
+  if (COMING_SOON) {
+    return (
+      <div
+        style={{
+          width: "100%",
+          height: "100%",
+          display: "flex",
+          flexDirection: "column",
+        }}
+      >
+        <ComingSoon />
+      </div>
+    );
+  }
 
   const scrollByCard = (direction) => {
     const el = scrollRef.current;
