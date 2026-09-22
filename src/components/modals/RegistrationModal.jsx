@@ -16,6 +16,7 @@ const RegistrationModal = ({
   generatedCount = 0,
   sessionId,
   selectedFlatType,
+  clientName = "skyline"
 }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -91,6 +92,7 @@ const RegistrationModal = ({
           session_id: sessionId,
           generated_count: generatedCount,
           property_section: selectedFlatType || null,
+          client_name: clientName,
         }),
       });
 

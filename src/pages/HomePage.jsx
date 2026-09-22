@@ -1022,6 +1022,7 @@ const HomePage = () => {
         generatedCount={generationCount}
         sessionId={sessionId}
         selectedFlatType={selectedFlatType}
+        clientName={clientName}
       />
 
       <style>{`
