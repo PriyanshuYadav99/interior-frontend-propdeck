@@ -1,5 +1,3 @@
-
-
 import React, { useState, useEffect, useRef } from "react";
 import {
   Sparkles,
@@ -17,12 +15,7 @@ import {
   logToolUsage,
   createVisibilityTracker,
 } from "../utils/activityTracker";
-import {
-  ROOMS,
-  STYLES,
-  FLAT_TYPES,
-  NAV_TABS,
-} from "../constants/designOptions";
+import { ROOMS, STYLES, NAV_TABS } from "../constants/designOptions";
 import "./HomePage.css";
 import LocalWatch from "../features/local-watch/LocalWatch";
 
@@ -56,6 +49,11 @@ const HomePage = () => {
   const [showBeforePreview, setShowBeforePreview] = useState(false);
   const [selectedFlatType, setSelectedFlatType] = useState("");
 
+  // ✅ NEW (Option A): this client's real unit types, fetched from the backend
+  // instead of a hardcoded shared list. See /api/flat-types/<client_name>.
+  const [flatTypes, setFlatTypes] = useState([]);
+  const [flatTypesLoading, setFlatTypesLoading] = useState(true);
+  const [clientConfig, setClientConfig] = useState(null);
   const [roomPreviewCache, setRoomPreviewCache] = useState({});
   const getGlobalAttemptCount = () =>
     parseInt(sessionStorage.getItem("globalAttemptCount") || "0", 10);
@@ -182,6 +180,37 @@ const HomePage = () => {
       setRoomPreviewCache(cache);
     };
     preloadAllRooms();
+  }, [clientName]);
+
+  // ✅ NEW (Option A): fetch this client's real unit types from Supabase
+  // (via /api/flat-types/<client_name>) instead of a hardcoded shared list.
+  // Runs on mount and again if clientName ever changes.
+    useEffect(() => {
+    let cancelled = false;
+    setFlatTypesLoading(true);
+    fetch(
+      `https://interior-backend-production.up.railway.app/api/flat-types/${clientName}`,
+    )
+      .then((res) => res.json())
+      .then((data) => {
+        if (cancelled) return;
+        if (data.success) {
+          setFlatTypes(data.flat_types || []);
+        } else {
+          console.error("[APP] Failed to load flat types:", data.error);
+          setFlatTypes([]);
+        }
+      })
+      .catch((err) => {
+        console.error("[APP] Flat types fetch failed:", err);
+        if (!cancelled) setFlatTypes([]);
+      })
+      .finally(() => {
+        if (!cancelled) setFlatTypesLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
   }, [clientName]);
 
   useEffect(() => {
@@ -414,11 +443,11 @@ const HomePage = () => {
       setVirtualTourInitialMode("map");
       setVirtualTourInitialCategory("dining");
       setCurrentView("virtualTour");
-    } else if (tabId === "localWatch") {                              // ← ADD THIS BLOCK
+    } else if (tabId === "localWatch") {
       setCurrentView("localWatch");
     }
   };
-  
+
   const shouldShowBefore = showBeforePreview || imageHistory.length === 0;
 
   // ---- Shared button style builder (tightened Figma sizing) ----
@@ -507,6 +536,7 @@ const HomePage = () => {
         {currentView === "scenario" && (
           <div style={{ flex: 1, minHeight: 0, overflow: "hidden" }}>
             <LifeEcho
+              clientName={clientName}
               onBack={handleBackToDefault}
               initialScenario={selectedPreviewScenario}
               onAttempt={checkAttemptLimit}
@@ -514,9 +544,16 @@ const HomePage = () => {
             />
           </div>
         )}
-        {currentView === "virtualTour" && (
+        {currentView === "virtualTour" && !clientConfig && (
+          <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", color: "#6b7280" }}>
+            Loading location…
+          </div>
+        )}
+        {currentView === "virtualTour" && clientConfig && (
           <div style={{ flex: 1, minHeight: 0, overflow: "hidden" }}>
             <VirtualTour
+              clientName={clientName}
+              clientConfig={clientConfig}
               onBack={handleBackToDefault}
               isEmbedded={true}
               initialPlace={virtualTourInitialPlace}
@@ -555,7 +592,7 @@ const HomePage = () => {
                   overflow: "auto",
                 }}
               >
-                {/* FLAT TYPE */}
+                {/* FLAT TYPE — now fetched per client from the backend */}
                 <div
                   style={{
                     marginBottom: "1.25rem",
@@ -576,17 +613,28 @@ const HomePage = () => {
                       gap: "0.4rem",
                       flex: 1,
                       minWidth: 0,
+                      alignItems: "center",
                     }}
                   >
-                    {FLAT_TYPES.map((flat) => (
-                      <button
-                        key={flat.id}
-                        onClick={() => setSelectedFlatType(flat.id)}
-                        style={pillButtonStyle(selectedFlatType === flat.id)}
-                      >
-                        {flat.name}
-                      </button>
-                    ))}
+                    {flatTypesLoading ? (
+                      <span style={{ fontSize: "0.78rem", color: "#9ca3af" }}>
+                        Loading unit types…
+                      </span>
+                    ) : flatTypes.length === 0 ? (
+                      <span style={{ fontSize: "0.78rem", color: "#9ca3af" }}>
+                        No unit types available
+                      </span>
+                    ) : (
+                      flatTypes.map((flat) => (
+                        <button
+                          key={flat.id}
+                          onClick={() => setSelectedFlatType(flat.id)}
+                          style={pillButtonStyle(selectedFlatType === flat.id)}
+                        >
+                          {flat.name}
+                        </button>
+                      ))
+                    )}
                   </div>
                 </div>
 

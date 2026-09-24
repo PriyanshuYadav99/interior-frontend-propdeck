@@ -47,17 +47,13 @@ const IconMap = {
   Dumbbell,
 };
 
-const APARTMENT_COORDINATES = {
-  lat: 43.645416,
-  lng: -79.38736,
-  name: "SOTHEBY'S APARTMENT",
-};
-const SEARCH_RADIUS = 5000;
+
 
 const searchVirtualTour = async (
+  clientName,
   location,
   category,
-  radius = SEARCH_RADIUS,
+  radius,
   isCustomSearch = false,
   isKeywordSearch = false,
   keyword = "",
@@ -66,8 +62,8 @@ const searchVirtualTour = async (
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      location:
-        location || `${APARTMENT_COORDINATES.lat},${APARTMENT_COORDINATES.lng}`,
+      client_name: clientName,
+      location,
       category,
       radius,
       is_custom_search: isCustomSearch,
@@ -93,6 +89,8 @@ const getDirections = async (origin, destination, mode = "driving") => {
 };
 
 const VirtualTour = ({
+  clientName,
+  clientConfig,
   onBack,
   isEmbedded = false,
   initialPlace = null,
@@ -101,6 +99,12 @@ const VirtualTour = ({
   onAttempt,
   onAttemptUsed,
 }) => {
+const home = {
+    lat: clientConfig.lat,
+    lng: clientConfig.lng,
+    name: clientConfig.display_name,
+  };
+  const radius = clientConfig.search_radius_m || 5000;  
   const [searchLocation, setSearchLocation] = useState("");
   const [selectedCategory, setSelectedCategory] = useState(initialCategory);
   const [places, setPlaces] = useState([]);
@@ -189,18 +193,15 @@ const VirtualTour = ({
   const autoLoadApartment = async () => {
     setLoading(true);
     setError("");
-    const apOrigin = {
-      lat: APARTMENT_COORDINATES.lat,
-      lng: APARTMENT_COORDINATES.lng,
-      name: APARTMENT_COORDINATES.name,
-    };
+      const apOrigin = { ...home };
     setOrigin(apOrigin);
     try {
       const cat = initialCategory;
-      const result = await searchVirtualTour(
-        `${APARTMENT_COORDINATES.lat},${APARTMENT_COORDINATES.lng}`,
+            const result = await searchVirtualTour(
+        clientName,
+        `${home.lat},${home.lng}`,
         cat,
-        SEARCH_RADIUS,
+        radius,
         false,
       );
       if (!result.success) throw new Error(result.error || "Search failed");
@@ -384,20 +385,22 @@ const VirtualTour = ({
       let result;
       if (isKeyword) {
         // Keyword search — find places near apartment matching the keyword
-        result = await searchVirtualTour(
-          `${APARTMENT_COORDINATES.lat},${APARTMENT_COORDINATES.lng}`,
+                result = await searchVirtualTour(
+          clientName,
+          `${home.lat},${home.lng}`,
           selectedCategory,
-          SEARCH_RADIUS,
+          radius,
           false,
           true, // isKeywordSearch
           searchLocation, // keyword e.g. "Indian restaurant"
         );
       } else {
         // Address/location search — find the specific location
-        result = await searchVirtualTour(
+          result = await searchVirtualTour(
+          clientName,
           searchLocation,
           selectedCategory,
-          SEARCH_RADIUS,
+          radius,
           true,
         );
       }
@@ -408,11 +411,7 @@ const VirtualTour = ({
         setShowMap(false);
       } else {
         setPlaces(result.places);
-        setOrigin({
-          lat: APARTMENT_COORDINATES.lat,
-          lng: APARTMENT_COORDINATES.lng,
-          name: APARTMENT_COORDINATES.name,
-        });
+        setOrigin({ ...home });
         setShowMap(true);
       }
     } catch (err) {
@@ -476,19 +475,10 @@ const VirtualTour = ({
     setIsCustomSearch(false);
     setShowStreetView(false);
 
-    setOrigin({
-      lat: APARTMENT_COORDINATES.lat,
-      lng: APARTMENT_COORDINATES.lng,
-      name: APARTMENT_COORDINATES.name,
-    });
+    setOrigin({ ...home });
     setLoading(true);
     setError("");
-    searchVirtualTour(
-      `${APARTMENT_COORDINATES.lat},${APARTMENT_COORDINATES.lng}`,
-      categoryId,
-      SEARCH_RADIUS,
-      false,
-    )
+    searchVirtualTour(clientName, `${home.lat},${home.lng}`, categoryId, radius, false)
       .then((result) => {
         if (result.success && result.places?.length > 0) {
           setPlaces(result.places);
