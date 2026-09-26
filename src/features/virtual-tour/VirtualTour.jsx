@@ -190,27 +190,30 @@ const VirtualTour = ({
   }, [directions]);
 
   const autoLoadApartment = async () => {
-    setLoading(true);
-    setError("");
-    const apOrigin = {
-      lat: APARTMENT_COORDINATES.lat,
-      lng: APARTMENT_COORDINATES.lng,
-      name: APARTMENT_COORDINATES.name,
-    };
-    setOrigin(apOrigin);
-    try {
-      const cat = initialCategory;
-      const result = await searchVirtualTour(
-        `${APARTMENT_COORDINATES.lat},${APARTMENT_COORDINATES.lng}`,
-        cat,
-        SEARCH_RADIUS,
-        false,
-        false,
-        "",
-        clientName,
-      );
-      if (!result.success) throw new Error(result.error || "Search failed");
-      let loadedPlaces = result.places || [];
+  setLoading(true);
+  setError("");
+  try {
+    const cat = initialCategory;
+    const result = await searchVirtualTour(
+      `${APARTMENT_COORDINATES.lat},${APARTMENT_COORDINATES.lng}`,
+      cat,
+      SEARCH_RADIUS,
+      false,
+      false,
+      "",
+      clientName,
+    );
+    if (!result.success) throw new Error(result.error || "Search failed");
+    if (result.origin) {
+      setOrigin(result.origin);
+    } else {
+      setOrigin({
+        lat: APARTMENT_COORDINATES.lat,
+        lng: APARTMENT_COORDINATES.lng,
+        name: APARTMENT_COORDINATES.name,
+      });
+    }
+    let loadedPlaces = result.places || [];
       if (initialPlace && !loadedPlaces.find((p) => p.id === initialPlace.id)) {
         loadedPlaces = [initialPlace, ...loadedPlaces];
       }
@@ -418,11 +421,15 @@ const VirtualTour = ({
         setShowMap(false);
       } else {
         setPlaces(result.places);
-        setOrigin({
-          lat: APARTMENT_COORDINATES.lat,
-          lng: APARTMENT_COORDINATES.lng,
-          name: APARTMENT_COORDINATES.name,
-        });
+        if (result.origin) {
+          setOrigin(result.origin);
+        } else {
+          setOrigin({
+            lat: APARTMENT_COORDINATES.lat,
+            lng: APARTMENT_COORDINATES.lng,
+            name: APARTMENT_COORDINATES.name,
+          });
+        }
         setShowMap(true);
       }
     } catch (err) {
@@ -486,11 +493,6 @@ const VirtualTour = ({
     setIsCustomSearch(false);
     setShowStreetView(false);
 
-    setOrigin({
-      lat: APARTMENT_COORDINATES.lat,
-      lng: APARTMENT_COORDINATES.lng,
-      name: APARTMENT_COORDINATES.name,
-    });
     setLoading(true);
     setError("");
     searchVirtualTour(
@@ -504,6 +506,15 @@ const VirtualTour = ({
     )
       .then((result) => {
         if (result.success && result.places?.length > 0) {
+          if (result.origin) {
+            setOrigin(result.origin);
+          } else {
+            setOrigin({
+              lat: APARTMENT_COORDINATES.lat,
+              lng: APARTMENT_COORDINATES.lng,
+              name: APARTMENT_COORDINATES.name,
+            });
+          }
           setPlaces(result.places);
           setShowMap(true);
         } else {
