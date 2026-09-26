@@ -33,6 +33,7 @@ const HomePage = () => {
 
   const urlParams = new URLSearchParams(window.location.search);
   const clientName = urlParams.get("client") || "skyline";
+  const locationClientName = urlParams.get("loc_client") || clientName;
 
   const [showRegistrationModal, setShowRegistrationModal] = useState(false);
   const [generationCount, setGenerationCount] = useState(0);
@@ -511,6 +512,7 @@ const HomePage = () => {
               initialScenario={selectedPreviewScenario}
               onAttempt={checkAttemptLimit}
               onAttemptUsed={incrementGlobalAttempt}
+              clientName={locationClientName}
             />
           </div>
         )}
@@ -524,6 +526,7 @@ const HomePage = () => {
               initialCategory={virtualTourInitialCategory}
               onAttempt={checkAttemptLimit}
               onAttemptUsed={incrementGlobalAttempt}
+              clientName={locationClientName}
             />
           </div>
         )}

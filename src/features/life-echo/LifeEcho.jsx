@@ -700,11 +700,11 @@ import {
 } from "../../utils/activityTracker";
 import { API_BASE_URL } from "../../config/env";
 
-const generateScenario = async (text) => {
+const generateScenario = async (text, clientName) => {
   const response = await fetch(`${API_BASE_URL}/api/scenario/generate`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ scenario_text: text }),
+    body: JSON.stringify({ scenario_text: text, client_name: clientName }),
   });
   if (!response.ok) throw new Error("Failed to generate scenario");
   return await response.json();
@@ -847,6 +847,7 @@ const LifeEcho = ({
   initialScenario = null,
   onAttempt,
   onAttemptUsed,
+  clientName,
 }) => {
   const [scenarioText, setScenarioText] = useState("");
   const [selectedScenario, setSelectedScenario] = useState(initialScenario);
@@ -948,7 +949,7 @@ const LifeEcho = ({
     setIsGenerating(true);
     setError("");
     try {
-      const result = await generateScenario(scenarioText);
+      const result = await generateScenario(scenarioText, clientName);
       if (result.success) {
         const newScenario = {
           id: Date.now(),

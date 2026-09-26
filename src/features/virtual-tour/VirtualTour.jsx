@@ -61,6 +61,7 @@ const searchVirtualTour = async (
   isCustomSearch = false,
   isKeywordSearch = false,
   keyword = "",
+  clientName = "",
 ) => {
   const response = await fetch(`${BACKEND_URL}/api/virtual-tour/search`, {
     method: "POST",
@@ -73,6 +74,7 @@ const searchVirtualTour = async (
       is_custom_search: isCustomSearch,
       is_keyword_search: isKeywordSearch,
       keyword: keyword,
+      client_name: clientName,
     }),
   });
   if (!response.ok) {
@@ -100,6 +102,7 @@ const VirtualTour = ({
   initialCategory = "dining",
   onAttempt,
   onAttemptUsed,
+  clientName,
 }) => {
   const [searchLocation, setSearchLocation] = useState("");
   const [selectedCategory, setSelectedCategory] = useState(initialCategory);
@@ -202,6 +205,9 @@ const VirtualTour = ({
         cat,
         SEARCH_RADIUS,
         false,
+        false,
+        "",
+        clientName,
       );
       if (!result.success) throw new Error(result.error || "Search failed");
       let loadedPlaces = result.places || [];
@@ -390,7 +396,8 @@ const VirtualTour = ({
           SEARCH_RADIUS,
           false,
           true, // isKeywordSearch
-          searchLocation, // keyword e.g. "Indian restaurant"
+          searchLocation, 
+          clientName,// keyword e.g. "Indian restaurant"
         );
       } else {
         // Address/location search — find the specific location
@@ -399,6 +406,9 @@ const VirtualTour = ({
           selectedCategory,
           SEARCH_RADIUS,
           true,
+          false,
+          "",
+          clientName,
         );
       }
 
@@ -488,6 +498,9 @@ const VirtualTour = ({
       categoryId,
       SEARCH_RADIUS,
       false,
+      false,
+      "",
+      clientName,
     )
       .then((result) => {
         if (result.success && result.places?.length > 0) {
@@ -1042,3 +1055,14 @@ const VirtualTour = ({
 };
 
 export default VirtualTour;
+
+
+
+
+
+
+
+
+
+
+
