@@ -22,6 +22,7 @@ export const generateDesign = async (
   customPrompt,
   clientName = "skyline",
   model = "imagen3",
+  flatType = "",
 ) => {
   console.log("[API] generateDesign called with:", {
     roomType,
@@ -29,6 +30,7 @@ export const generateDesign = async (
     customPrompt,
     clientName,
     model,
+    flatType,
   });
 
   const response = await fetch(`${API_BASE_URL}/api/generate-design`, {
@@ -38,6 +40,7 @@ export const generateDesign = async (
     },
     body: JSON.stringify({
       room_type: roomType,
+      flat_type: flatType,
       style: style,
       custom_prompt: customPrompt,
       client_name: clientName,
@@ -64,6 +67,7 @@ export const generateDesignAsync = async (
   customPrompt,
   clientName = "skyline",
   model = "imagen3",
+  flatType = "",
 ) => {
   const response = await fetch(`${API_BASE_URL}/api/generate-design`, {
     method: "POST",
@@ -72,6 +76,7 @@ export const generateDesignAsync = async (
     },
     body: JSON.stringify({
       room_type: roomType,
+      flat_type: flatType,
       style: style,
       custom_prompt: customPrompt,
       client_name: clientName,
@@ -100,6 +105,75 @@ export const checkJobStatus = async (jobId) => {
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));
     throw new Error(errorData.error || "Failed to check job status");
+  }
+
+  return await response.json();
+};
+
+// ============================================
+// CLIENT CONFIG FUNCTIONS (flat types / rooms, per client + unit)
+// ============================================
+
+/**
+ * Fetch the active unit/flat types for a client (e.g. Studio, 1BR, 2BR, 3BR).
+ * Clients with no configured or active units return an empty array —
+ * callers should hide the unit selector in that case rather than treat it
+ * as an error.
+ * @param {string} clientName
+ * @returns {Promise<{success: boolean, client_name: string, flat_types: Array<{id: string, name: string}>}>}
+ */
+export const getFlatTypes = async (clientName) => {
+  console.log("[API] getFlatTypes called with:", { clientName });
+
+  const response = await fetch(
+    `${API_BASE_URL}/api/flat-types/${clientName}`,
+    {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    },
+  );
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    console.error("[API] getFlatTypes failed:", errorData);
+    throw new Error(errorData.error || "Failed to fetch flat types");
+  }
+
+  return await response.json();
+};
+
+/**
+ * Fetch the room list for a client, optionally scoped to a unit/flat type.
+ * Unit-aware clients (e.g. the-wow-tower) return a different room list per
+ * flatType. Non-unit-aware clients ignore flatType and return their fixed
+ * room list.
+ * @param {string} clientName
+ * @param {string} [flatType]
+ * @returns {Promise<{success: boolean, client_name: string, flat_type: string|null, rooms: Array<{id: string, name: string}>}>}
+ */
+export const getClientRooms = async (clientName, flatType) => {
+  console.log("[API] getClientRooms called with:", { clientName, flatType });
+
+  const params = flatType
+    ? `?flat_type=${encodeURIComponent(flatType)}`
+    : "";
+
+  const response = await fetch(
+    `${API_BASE_URL}/api/rooms/${clientName}${params}`,
+    {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    },
+  );
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    console.error("[API] getClientRooms failed:", errorData);
+    throw new Error(errorData.error || "Failed to fetch rooms");
   }
 
   return await response.json();

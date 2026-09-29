@@ -1,5 +1,3 @@
-
-
 import React, { useState, useEffect, useRef } from "react";
 import {
   Sparkles,
@@ -8,8 +6,21 @@ import {
   Home,
   Building,
   Loader2,
+  Bed,
+  Sofa,
+  Utensils,
+  Dumbbell,
+  Baby,
+  Waves,
+  BedDouble,
 } from "lucide-react";
-import { generateDesign, checkHealth, checkSession } from "../services/api";
+import {
+  generateDesign,
+  checkHealth,
+  checkSession,
+  getFlatTypes,
+  getClientRooms,
+} from "../services/api";
 import RegistrationModal from "../components/modals/RegistrationModal";
 import LifeEcho from "../features/life-echo/LifeEcho";
 import VirtualTour from "../features/virtual-tour/VirtualTour";
@@ -17,15 +28,26 @@ import {
   logToolUsage,
   createVisibilityTracker,
 } from "../utils/activityTracker";
-import {
-  ROOMS,
-  STYLES,
-  FLAT_TYPES,
-  NAV_TABS,
-} from "../constants/designOptions";
+import { STYLES, NAV_TABS } from "../constants/designOptions";
 import "./HomePage.css";
 import LocalWatch from "../features/local-watch/LocalWatch";
 
+// Rooms now come from the backend as {id, name} (see /api/rooms/:clientName),
+// so icons are matched here by id, on the frontend, instead of being baked
+// into a static ROOMS constant. Any room id not listed here still renders
+// fine — it just falls back to DEFAULT_ROOM_ICON.
+const ROOM_ICONS = {
+  master_bedroom: Bed,
+  bedroom_1: Bed,
+  bedroom: Bed,
+  living_room: Sofa,
+  kitchen: Utensils,
+  studio_room: BedDouble,
+  gym: Dumbbell,
+  kids_play_area: Baby,
+  swimming_pool: Waves,
+};
+const DEFAULT_ROOM_ICON = Home;
 
 const HomePage = () => {
   const [currentView, setCurrentView] = useState("default");
@@ -57,6 +79,14 @@ const HomePage = () => {
   const [showBeforePreview, setShowBeforePreview] = useState(false);
   const [selectedFlatType, setSelectedFlatType] = useState("");
 
+  // Dynamic, per-client data — replaces the old static FLAT_TYPES/ROOMS
+  // imports. flatTypes comes from /api/flat-types/:clientName (Supabase
+  // property_sections). rooms comes from /api/rooms/:clientName and is
+  // re-fetched whenever the selected unit changes, since unit-aware clients
+  // (e.g. the-wow-tower) show a different room list per unit.
+  const [flatTypes, setFlatTypes] = useState([]);
+  const [rooms, setRooms] = useState([]);
+
   const [roomPreviewCache, setRoomPreviewCache] = useState({});
   const getGlobalAttemptCount = () =>
     parseInt(sessionStorage.getItem("globalAttemptCount") || "0", 10);
@@ -79,6 +109,12 @@ const HomePage = () => {
     }
     return false;
   };
+
+  // Cache key for a room preview must include the unit, since the same
+  // room id (e.g. "living_room") maps to a different reference image per
+  // unit for unit-aware clients.
+  const previewKey = (roomId, flatType) =>
+    `${clientName}:${flatType || "none"}:${roomId}`;
 
   useEffect(() => {
     const initializeApp = async () => {
@@ -162,28 +198,85 @@ const HomePage = () => {
     };
   }, [currentView]);
 
+  // Fetch this client's unit types (e.g. Studio/1BR/2BR/3BR). Clients with
+  // no configured or no *active* units (property_sections is_active=false,
+  // or no rows at all) get an empty array back — the unit selector is
+  // hidden entirely in that case rather than shown empty.
   useEffect(() => {
+    const loadFlatTypes = async () => {
+      try {
+        const data = await getFlatTypes(clientName);
+        const types = data.success ? data.flat_types || [] : [];
+        setFlatTypes(types);
+        setSelectedFlatType(types.length > 0 ? types[0].id : "");
+      } catch (err) {
+        console.error("[APP] Failed to load flat types:", err);
+        setFlatTypes([]);
+        setSelectedFlatType("");
+      }
+    };
+    loadFlatTypes();
+  }, [clientName]);
+
+  // Fetch the room list for this client + selected unit. Non-unit-aware
+  // clients ignore flatType server-side and just return their fixed list.
+  // If the currently selected room no longer exists in the new list (e.g.
+  // switching from 1BR to Studio drops "Master Bedroom"), clear it and
+  // reset the preview back to the "before" placeholder.
+  useEffect(() => {
+    const loadRooms = async () => {
+      try {
+        const data = await getClientRooms(clientName, selectedFlatType);
+        const nextRooms = data.success ? data.rooms || [] : [];
+        setRooms(nextRooms);
+        setSelectedRoom((prevRoom) => {
+          if (prevRoom && !nextRooms.some((r) => r.id === prevRoom)) {
+            setRoomPreviewImage(null);
+            setShowBeforePreview(true);
+            return "";
+          }
+          return prevRoom;
+        });
+      } catch (err) {
+        console.error("[APP] Failed to load rooms:", err);
+        setRooms([]);
+      }
+    };
+    loadRooms();
+  }, [clientName, selectedFlatType]);
+
+  // Preload preview images for every room in the current room list, keyed
+  // by client+unit+room so switching units never shows a stale image from
+  // a different unit while the correct one is still loading.
+  useEffect(() => {
+    if (!rooms || rooms.length === 0) return;
+
     const preloadAllRooms = async () => {
       const cache = {};
       await Promise.all(
-        ROOMS.map(async (room) => {
+        rooms.map(async (room) => {
           try {
-            const res = await fetch(
+            const url = new URL(
               `https://interior-backend-production.up.railway.app/api/room-preview/${clientName}/${room.id}`,
             );
+            if (selectedFlatType) {
+              url.searchParams.set("flat_type", selectedFlatType);
+            }
+            const res = await fetch(url.toString());
             const data = await res.json();
             if (data.success) {
-              cache[room.id] = `data:image/png;base64,${data.image_base64}`;
+              cache[previewKey(room.id, selectedFlatType)] =
+                `data:image/png;base64,${data.image_base64}`;
             }
           } catch (err) {
             console.error(`[APP] Failed to preload ${room.id}:`, err);
           }
         }),
       );
-      setRoomPreviewCache(cache);
+      setRoomPreviewCache((prev) => ({ ...prev, ...cache }));
     };
     preloadAllRooms();
-  }, [clientName]);
+  }, [clientName, selectedFlatType, rooms]);
 
   useEffect(() => {
     if (currentView === "default" && sessionId && !isRegistered)
@@ -208,22 +301,27 @@ const HomePage = () => {
     }
   };
 
-  const loadRoomPreview = async (roomId) => {
+  const loadRoomPreview = async (roomId, flatTypeOverride = selectedFlatType) => {
     setShowBeforePreview(true);
-    if (roomPreviewCache[roomId]) {
-      setRoomPreviewImage(roomPreviewCache[roomId]);
+    const key = previewKey(roomId, flatTypeOverride);
+    if (roomPreviewCache[key]) {
+      setRoomPreviewImage(roomPreviewCache[key]);
       return;
     }
     setLoadingPreview(true);
     setRoomPreviewImage(null);
     try {
-      const res = await fetch(
+      const url = new URL(
         `https://interior-backend-production.up.railway.app/api/room-preview/${clientName}/${roomId}`,
       );
+      if (flatTypeOverride) {
+        url.searchParams.set("flat_type", flatTypeOverride);
+      }
+      const res = await fetch(url.toString());
       const data = await res.json();
       if (data.success) {
         const img = `data:image/png;base64,${data.image_base64}`;
-        setRoomPreviewCache((prev) => ({ ...prev, [roomId]: img }));
+        setRoomPreviewCache((prev) => ({ ...prev, [key]: img }));
         setRoomPreviewImage(img);
       }
     } catch (err) {
@@ -231,6 +329,16 @@ const HomePage = () => {
     } finally {
       setLoadingPreview(false);
     }
+  };
+
+  // Switching units resets the visible preview to the "before" placeholder;
+  // the rooms-loading effect above handles clearing selectedRoom if it's no
+  // longer valid for the newly selected unit.
+  const handleFlatTypeChange = (flatId) => {
+    if (flatId === selectedFlatType) return;
+    setSelectedFlatType(flatId);
+    setShowBeforePreview(true);
+    setRoomPreviewImage(null);
   };
 
   const handleRegistrationSuccess = async (data) => {
@@ -289,6 +397,8 @@ const HomePage = () => {
         selectedStyle,
         customPrompt,
         clientName,
+        "imagen3",
+        selectedFlatType,
       );
       setProgress(50);
       if (!result.success)
@@ -558,42 +668,48 @@ const HomePage = () => {
                   overflow: "auto",
                 }}
               >
-                {/* FLAT TYPE */}
-                <div
-                  style={{
-                    marginBottom: "1.25rem",
-                    display: "flex",
-                    alignItems: "flex-start",
-                    gap: "0.5rem",
-                  }}
-                >
-                  <Building
-                    size={18}
-                    color="#1f2937"
-                    style={{ marginTop: "0.4rem", flexShrink: 0 }}
-                  />
+                {/* FLAT TYPE — only shown for clients that have active units
+                    configured in property_sections (e.g. the-wow-tower).
+                    Clients with none (empty flatTypes) skip this row
+                    entirely instead of showing an empty selector. */}
+                {flatTypes.length > 0 && (
                   <div
                     style={{
+                      marginBottom: "1.25rem",
                       display: "flex",
-                      flexWrap: "wrap",
-                      gap: "0.4rem",
-                      flex: 1,
-                      minWidth: 0,
+                      alignItems: "flex-start",
+                      gap: "0.5rem",
                     }}
                   >
-                    {FLAT_TYPES.map((flat) => (
-                      <button
-                        key={flat.id}
-                        onClick={() => setSelectedFlatType(flat.id)}
-                        style={pillButtonStyle(selectedFlatType === flat.id)}
-                      >
-                        {flat.name}
-                      </button>
-                    ))}
+                    <Building
+                      size={18}
+                      color="#1f2937"
+                      style={{ marginTop: "0.4rem", flexShrink: 0 }}
+                    />
+                    <div
+                      style={{
+                        display: "flex",
+                        flexWrap: "wrap",
+                        gap: "0.4rem",
+                        flex: 1,
+                        minWidth: 0,
+                      }}
+                    >
+                      {flatTypes.map((flat) => (
+                        <button
+                          key={flat.id}
+                          onClick={() => handleFlatTypeChange(flat.id)}
+                          style={pillButtonStyle(selectedFlatType === flat.id)}
+                        >
+                          {flat.name}
+                        </button>
+                      ))}
+                    </div>
                   </div>
-                </div>
+                )}
 
-                {/* ROOMS */}
+                {/* ROOMS — fetched per client + selected unit from
+                    /api/rooms/:clientName */}
                 <div
                   style={{
                     marginBottom: "1.25rem",
@@ -616,8 +732,8 @@ const HomePage = () => {
                       minWidth: 0,
                     }}
                   >
-                    {ROOMS.map((room) => {
-                      const Icon = room.icon;
+                    {rooms.map((room) => {
+                      const Icon = ROOM_ICONS[room.id] || DEFAULT_ROOM_ICON;
                       return (
                         <button
                           key={room.id}
