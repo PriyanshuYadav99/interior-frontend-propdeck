@@ -62,6 +62,7 @@ const searchVirtualTour = async (
   isKeywordSearch = false,
   keyword = "",
   clientName = "",
+  flatType = "",
 ) => {
   const response = await fetch(`${BACKEND_URL}/api/virtual-tour/search`, {
     method: "POST",
@@ -75,6 +76,7 @@ const searchVirtualTour = async (
       is_keyword_search: isKeywordSearch,
       keyword: keyword,
       client_name: clientName,
+      flat_type: flatType,
     }),
   });
   if (!response.ok) {
@@ -103,6 +105,7 @@ const VirtualTour = ({
   onAttempt,
   onAttemptUsed,
   clientName,
+  flatType,
 }) => {
   const [searchLocation, setSearchLocation] = useState("");
   const [selectedCategory, setSelectedCategory] = useState(initialCategory);
@@ -190,30 +193,31 @@ const VirtualTour = ({
   }, [directions]);
 
   const autoLoadApartment = async () => {
-  setLoading(true);
-  setError("");
-  try {
-    const cat = initialCategory;
-    const result = await searchVirtualTour(
-      `${APARTMENT_COORDINATES.lat},${APARTMENT_COORDINATES.lng}`,
-      cat,
-      SEARCH_RADIUS,
-      false,
-      false,
-      "",
-      clientName,
-    );
-    if (!result.success) throw new Error(result.error || "Search failed");
-    if (result.origin) {
-      setOrigin(result.origin);
-    } else {
-      setOrigin({
-        lat: APARTMENT_COORDINATES.lat,
-        lng: APARTMENT_COORDINATES.lng,
-        name: APARTMENT_COORDINATES.name,
-      });
-    }
-    let loadedPlaces = result.places || [];
+    setLoading(true);
+    setError("");
+    try {
+      const cat = initialCategory;
+      const result = await searchVirtualTour(
+        `${APARTMENT_COORDINATES.lat},${APARTMENT_COORDINATES.lng}`,
+        cat,
+        SEARCH_RADIUS,
+        false,
+        false,
+        "",
+        clientName,
+        flatType,
+      );
+      if (!result.success) throw new Error(result.error || "Search failed");
+      if (result.origin) {
+        setOrigin(result.origin);
+      } else {
+        setOrigin({
+          lat: APARTMENT_COORDINATES.lat,
+          lng: APARTMENT_COORDINATES.lng,
+          name: APARTMENT_COORDINATES.name,
+        });
+      }
+      let loadedPlaces = result.places || [];
       if (initialPlace && !loadedPlaces.find((p) => p.id === initialPlace.id)) {
         loadedPlaces = [initialPlace, ...loadedPlaces];
       }
@@ -234,6 +238,13 @@ const VirtualTour = ({
   const initializeMap = () => {
     if (!window.google || !mapRef.current) return;
     try {
+      // Google Maps markers are JS options, so var() doesn't work here.
+      // Read the theme colour from the CSS variable set on the outer card.
+      const markerColor =
+        getComputedStyle(mapRef.current)
+          .getPropertyValue("--c-marker")
+          .trim() || "#16223B";
+
       const centerCoords =
         initialPlace && !initialHandled.current === false
           ? {
@@ -286,7 +297,7 @@ const VirtualTour = ({
           icon: {
             path: window.google.maps.SymbolPath.CIRCLE,
             scale: isCustomSearch ? 18 : 15,
-            fillColor: isCustomSearch ? "#ef4444" : "#16223B",
+            fillColor: isCustomSearch ? "#ef4444" : markerColor,
             fillOpacity: 1,
             strokeColor: "white",
             strokeWeight: 2,
@@ -399,8 +410,9 @@ const VirtualTour = ({
           SEARCH_RADIUS,
           false,
           true, // isKeywordSearch
-          searchLocation, 
-          clientName,// keyword e.g. "Indian restaurant"
+          searchLocation, // keyword e.g. "Indian restaurant"
+          clientName,
+          flatType,
         );
       } else {
         // Address/location search — find the specific location
@@ -412,6 +424,7 @@ const VirtualTour = ({
           false,
           "",
           clientName,
+          flatType,
         );
       }
 
@@ -453,6 +466,7 @@ const VirtualTour = ({
         place.photo_url || null,
         place.distance || null,
         place.rating || null,
+        flatType || null,
       );
     }
 
@@ -503,6 +517,7 @@ const VirtualTour = ({
       false,
       "",
       clientName,
+      flatType,
     )
       .then((result) => {
         if (result.success && result.places?.length > 0) {
@@ -567,9 +582,6 @@ const VirtualTour = ({
         >
           Explore nearby
         </h1>
-        {/* <button onClick={onBack} style={{ width: '36px', height: '36px', borderRadius: '50%', border: '1px solid #d1d5db', background: 'white', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <X size={18} color="#6b7280" />
-        </button> */}
       </div>
 
       {/* CATEGORIES + SEARCH */}
@@ -594,9 +606,14 @@ const VirtualTour = ({
               style={{
                 padding: "0.45rem 0.9rem",
                 borderRadius: "20px",
-                border: "1.5px solid #d1d5db",
-                background: selectedCategory === cat.id ? "#C9A253" : "white",
-                color: selectedCategory === cat.id ? "white" : "#374151",
+                border:
+                  selectedCategory === cat.id
+                    ? "1.5px solid var(--c-cat-border)"
+                    : "1.5px solid #d1d5db",
+                background:
+                  selectedCategory === cat.id ? "var(--c-cat-bg)" : "white",
+                color:
+                  selectedCategory === cat.id ? "var(--c-cat-text)" : "#374151",
                 cursor: loading ? "not-allowed" : "pointer",
                 display: "flex",
                 alignItems: "center",
@@ -697,7 +714,7 @@ const VirtualTour = ({
             <div
               style={{
                 width: "45%",
-                background: "#F8F5EF",
+                background: "var(--c-page-bg)",
                 borderRadius: "12px",
                 overflowY: "auto",
                 padding: "0.75rem",
@@ -811,7 +828,7 @@ const VirtualTour = ({
                         </svg>
                         <span>~{place.distance}km</span>
                       </div>
-                      {/* Rating pill - yellow background with star outline like Figma */}
+                      {/* Rating pill */}
                       {place.rating && (
                         <div
                           style={{
@@ -819,7 +836,7 @@ const VirtualTour = ({
                             alignItems: "center",
                             gap: "0.3rem",
                             padding: "0.25rem 0.7rem",
-                            background: "#C9A253",
+                            background: "var(--c-rating-bg)",
                             borderRadius: "20px",
                             fontSize: "0.75rem",
                             color: "white",
@@ -903,14 +920,11 @@ const VirtualTour = ({
                         width="24"
                         height="24"
                         viewBox="0 0 24 24"
-                        fill="#C9A253"
                         xmlns="http://www.w3.org/2000/svg"
+                        style={{ fill: "var(--c-street-icon)" }}
                       >
-                        <circle cx="12" cy="5" r="2" fill="#C9A253" />
-                        <path
-                          d="M12 8c-1.5 0-3 .8-3.5 2L7 13h2l1-2v3l-2 5h2l1-3 1 3h2l-2-5v-3l1 2h2l-1.5-3C14 8.8 13.5 8 12 8z"
-                          fill="#C9A253"
-                        />
+                        <circle cx="12" cy="5" r="2" />
+                        <path d="M12 8c-1.5 0-3 .8-3.5 2L7 13h2l1-2v3l-2 5h2l1-3 1 3h2l-2-5v-3l1 2h2l-1.5-3C14 8.8 13.5 8 12 8z" />
                       </svg>
                     </button>
                   </div>
@@ -1066,14 +1080,3 @@ const VirtualTour = ({
 };
 
 export default VirtualTour;
-
-
-
-
-
-
-
-
-
-
-

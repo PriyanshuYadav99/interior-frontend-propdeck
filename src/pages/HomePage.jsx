@@ -1191,7 +1191,7 @@ import {
 import { STYLES, NAV_TABS } from "../constants/designOptions";
 import "./HomePage.css";
 import LocalWatch from "../features/local-watch/LocalWatch";
-
+import { getTheme, themeToCssVars } from "../constants/clientThemes";
 // Rooms now come from the backend as {id, name} (see /api/rooms/:clientName),
 // so icons are matched here by id, on the frontend, instead of being baked
 // into a static ROOMS constant. Any room id not listed here still renders
@@ -1216,7 +1216,8 @@ const HomePage = () => {
   const urlParams = new URLSearchParams(window.location.search);
   const clientName = urlParams.get("client") || "skyline";
   const locationClientName = urlParams.get("loc_client") || clientName;
-
+  const theme = getTheme(clientName);
+  const themeVars = themeToCssVars(theme);  
   const [showRegistrationModal, setShowRegistrationModal] = useState(false);
   const [generationCount, setGenerationCount] = useState(0);
   const [isRegistered, setIsRegistered] = useState(false);
@@ -1704,12 +1705,12 @@ const HomePage = () => {
   const pillButtonStyle = (active) => ({
     padding: "0.4rem 0.65rem",
     borderRadius: "8px",
-    border: active ? "2px solid #C9A253" : "1px solid #e5e7eb",
-    background: active ? "#C9A253" : "white",
+    border: active ? "2px solid var(--c-pill-border)" : "1px solid #e5e7eb",
+    background: active ? "var(--c-pill-bg)" : "white",
     cursor: "pointer",
     fontSize: "0.78rem",
     fontWeight: "500",
-    color: active ? "white" : "#6b7280",
+    color: active ? "var(--c-pill-text)" : "#6b7280",
     display: "flex",
     alignItems: "center",
     gap: "0.35rem",
@@ -1720,12 +1721,15 @@ const HomePage = () => {
   return (
     // OUTER CARD — fixed to Figma's 1240 x 642, scales down on small screens via maxWidth
     <div
+      data-custom-font={theme.fontFamily ? "true" : undefined}
       style={{
+        ...themeVars,
+        fontFamily: theme.fontFamily ? "var(--c-font-family)" : undefined,
         width: "1240px",
         maxWidth: "100%",
         height: "642px",
         margin: "0 auto",
-        background: "#F8F5EF",
+        background: "var(--c-page-bg)", 
         borderRadius: "20px",
         padding: "24px",
         display: "flex",
@@ -1759,8 +1763,8 @@ const HomePage = () => {
                 padding: "0.5rem 1.1rem",
                 borderRadius: "8px",
                 border: "none",
-                background: currentView === tab.id ? "#101C34" : "transparent",
-                color: currentView === tab.id ? "white" : "#6b7280",
+                background: currentView === tab.id ? "var(--c-tab-bg)" : "transparent",
+                color: currentView === tab.id ? "var(--c-tab-text)" : "#6b7280",
                 fontSize: "0.9rem",
                 fontWeight: "600",
                 cursor: "pointer",
@@ -1791,6 +1795,7 @@ const HomePage = () => {
               onAttempt={checkAttemptLimit}
               onAttemptUsed={incrementGlobalAttempt}
               clientName={locationClientName}
+              flatType={selectedFlatType} 
             />
           </div>
         )}
@@ -1805,6 +1810,7 @@ const HomePage = () => {
               onAttempt={checkAttemptLimit}
               onAttemptUsed={incrementGlobalAttempt}
               clientName={locationClientName}
+              flatType={selectedFlatType}
             />
           </div>
         )}
@@ -2001,8 +2007,8 @@ const HomePage = () => {
                   background:
                     isGenerating || apiStatus === "disconnected"
                       ? "#d1d5db"
-                      : "#101C34",
-                  color: "white",
+                      : "var(--c-btn-bg)",
+                  color: "var(--c-btn-text)",
                   padding: "0.65rem",
                   borderRadius: "10px",
                   fontWeight: "600",
@@ -2316,7 +2322,13 @@ const HomePage = () => {
 
       <style>{`
         @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        [data-custom-font] button,
+        [data-custom-font] input,
+        [data-custom-font] textarea {
+          font-family: inherit;
+        }
         * { box-sizing: border-box; }
+        ::-webkit-scrollbar { width: 4px; height: 4px; }
         ::-webkit-scrollbar { width: 4px; height: 4px; }
         ::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 10px; }
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
