@@ -75,7 +75,38 @@ const THEMES = {
     ratingBg: "#E8BE62",
     streetIcon: "#E1A035",
   },
+  "nakheel": {
+    fontFamily: '"Sora", sans-serif',
 
+    tabBg: "#006280",
+    tabText: "#ffffff",
+
+    pillBg: "#D6E6F5",
+    pillBorder: "#7FA9D1",
+    pillText: "#2B5C8A",
+
+    btnBg: "#2F6480",
+    btnText: "#ffffff",
+
+    cardBg: "rgba(127, 169, 209, 0.1)",
+    cardBorder: "#7FA9D1",
+    iconBg: "rgba(127, 169, 209, 0.25)",
+    iconColor: "#2B5C8A",
+
+    detailBg: "#F5F7FA",
+    detailBorder: "#B8C4CE",
+
+    tagBg: "rgba(127, 169, 209, 0.1)",
+    tagBorder: "#7FA9D1",
+    tagText: "#2B5C8A",
+
+    catBg: "rgba(127, 169, 209, 0.2)",
+    catBorder: "#7FA9D1",
+    catText: "#2B5C8A",
+
+    ratingBg: "#006280",
+    streetIcon: "#2B5C8A",
+  },
   // Add future clients here. Example:
   // "another-client": { btnBg: "#0F766E", pillBg: "#0F766E" },
 };
