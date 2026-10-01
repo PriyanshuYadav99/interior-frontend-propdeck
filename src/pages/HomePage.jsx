@@ -1,3 +1,4 @@
+
 // import React, { useState, useEffect, useRef } from "react";
 // import {
 //   Sparkles,
@@ -31,7 +32,7 @@
 // import { STYLES, NAV_TABS } from "../constants/designOptions";
 // import "./HomePage.css";
 // import LocalWatch from "../features/local-watch/LocalWatch";
-
+// import { getTheme, themeToCssVars } from "../constants/clientThemes";
 // // Rooms now come from the backend as {id, name} (see /api/rooms/:clientName),
 // // so icons are matched here by id, on the frontend, instead of being baked
 // // into a static ROOMS constant. Any room id not listed here still renders
@@ -56,7 +57,8 @@
 //   const urlParams = new URLSearchParams(window.location.search);
 //   const clientName = urlParams.get("client") || "skyline";
 //   const locationClientName = urlParams.get("loc_client") || clientName;
-
+//   const theme = getTheme(clientName);
+//   const themeVars = themeToCssVars(theme);  
 //   const [showRegistrationModal, setShowRegistrationModal] = useState(false);
 //   const [generationCount, setGenerationCount] = useState(0);
 //   const [isRegistered, setIsRegistered] = useState(false);
@@ -230,12 +232,20 @@
 //         const nextRooms = data.success ? data.rooms || [] : [];
 //         setRooms(nextRooms);
 //         setSelectedRoom((prevRoom) => {
-//           if (prevRoom && !nextRooms.some((r) => r.id === prevRoom)) {
-//             setRoomPreviewImage(null);
-//             setShowBeforePreview(true);
-//             return "";
+//           const stillValid = prevRoom && nextRooms.some((r) => r.id === prevRoom);
+//           if (stillValid) return prevRoom;
+
+//           // No room selected yet (first load), or the previously selected
+//           // room doesn't exist for the newly loaded unit — default to the
+//           // first room in the list and load its preview, instead of
+//           // leaving the right panel on the empty placeholder.
+//           if (nextRooms.length > 0) {
+//             loadRoomPreview(nextRooms[0].id, selectedFlatType);
+//             return nextRooms[0].id;
 //           }
-//           return prevRoom;
+//           setRoomPreviewImage(null);
+//           setShowBeforePreview(true);
+//           return "";
 //         });
 //       } catch (err) {
 //         console.error("[APP] Failed to load rooms:", err);
@@ -536,12 +546,12 @@
 //   const pillButtonStyle = (active) => ({
 //     padding: "0.4rem 0.65rem",
 //     borderRadius: "8px",
-//     border: active ? "2px solid #C9A253" : "1px solid #e5e7eb",
-//     background: active ? "#C9A253" : "white",
+//     border: active ? "2px solid var(--c-pill-border)" : "1px solid #e5e7eb",
+//     background: active ? "var(--c-pill-bg)" : "white",
 //     cursor: "pointer",
 //     fontSize: "0.78rem",
 //     fontWeight: "500",
-//     color: active ? "white" : "#6b7280",
+//     color: active ? "var(--c-pill-text)" : "#6b7280",
 //     display: "flex",
 //     alignItems: "center",
 //     gap: "0.35rem",
@@ -552,12 +562,15 @@
 //   return (
 //     // OUTER CARD — fixed to Figma's 1240 x 642, scales down on small screens via maxWidth
 //     <div
+//       data-custom-font={theme.fontFamily ? "true" : undefined}
 //       style={{
+//         ...themeVars,
+//         fontFamily: theme.fontFamily ? "var(--c-font-family)" : undefined,
 //         width: "1240px",
 //         maxWidth: "100%",
 //         height: "642px",
 //         margin: "0 auto",
-//         background: "#F8F5EF",
+//         background: "var(--c-page-bg)", 
 //         borderRadius: "20px",
 //         padding: "24px",
 //         display: "flex",
@@ -591,8 +604,8 @@
 //                 padding: "0.5rem 1.1rem",
 //                 borderRadius: "8px",
 //                 border: "none",
-//                 background: currentView === tab.id ? "#101C34" : "transparent",
-//                 color: currentView === tab.id ? "white" : "#6b7280",
+//                 background: currentView === tab.id ? "var(--c-tab-bg)" : "transparent",
+//                 color: currentView === tab.id ? "var(--c-tab-text)" : "#6b7280",
 //                 fontSize: "0.9rem",
 //                 fontWeight: "600",
 //                 cursor: "pointer",
@@ -623,6 +636,7 @@
 //               onAttempt={checkAttemptLimit}
 //               onAttemptUsed={incrementGlobalAttempt}
 //               clientName={locationClientName}
+//               flatType={selectedFlatType} 
 //             />
 //           </div>
 //         )}
@@ -637,6 +651,7 @@
 //               onAttempt={checkAttemptLimit}
 //               onAttemptUsed={incrementGlobalAttempt}
 //               clientName={locationClientName}
+//               flatType={selectedFlatType}
 //             />
 //           </div>
 //         )}
@@ -833,8 +848,8 @@
 //                   background:
 //                     isGenerating || apiStatus === "disconnected"
 //                       ? "#d1d5db"
-//                       : "#101C34",
-//                   color: "white",
+//                       : "var(--c-btn-bg)",
+//                   color: "var(--c-btn-text)",
 //                   padding: "0.65rem",
 //                   borderRadius: "10px",
 //                   fontWeight: "600",
@@ -922,9 +937,10 @@
 //                       style={{
 //                         width: "100%",
 //                         height: "100%",
-//                         objectFit: "cover",
+//                         objectFit: "contain",
 //                         objectPosition: "center",
 //                         display: "block",
+//                         background: "#ffffff",
 //                         filter: "brightness(0.93)",
 //                       }}
 //                     />
@@ -1017,9 +1033,10 @@
 //                     style={{
 //                       width: "100%",
 //                       height: "100%",
-//                       objectFit: "cover",
+//                       objectFit: "contain",
 //                       objectPosition: "center",
 //                       display: "block",
+//                       background: "#ffffff",
 //                     }}
 //                   />
 //                   <div
@@ -1146,7 +1163,13 @@
 
 //       <style>{`
 //         @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+//         [data-custom-font] button,
+//         [data-custom-font] input,
+//         [data-custom-font] textarea {
+//           font-family: inherit;
+//         }
 //         * { box-sizing: border-box; }
+//         ::-webkit-scrollbar { width: 4px; height: 4px; }
 //         ::-webkit-scrollbar { width: 4px; height: 4px; }
 //         ::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 10px; }
 //         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
@@ -1157,6 +1180,7 @@
 // };
 
 // export default HomePage;
+
 
 import React, { useState, useEffect, useRef } from "react";
 import {
@@ -1199,9 +1223,12 @@ import { getTheme, themeToCssVars } from "../constants/clientThemes";
 const ROOM_ICONS = {
   master_bedroom: Bed,
   bedroom_1: Bed,
+  bedroom_2: Bed,
+  bedroom_3: Bed,
   bedroom: Bed,
   living_room: Sofa,
   kitchen: Utensils,
+  dining: Utensils,
   studio_room: BedDouble,
   gym: Dumbbell,
   kids_play_area: Baby,
@@ -1249,6 +1276,19 @@ const HomePage = () => {
   const [rooms, setRooms] = useState([]);
 
   const [roomPreviewCache, setRoomPreviewCache] = useState({});
+
+  // Refs used to keep preview loading fast and race-free:
+  //  - selectedRoomRef always holds the latest selected room, so the rooms
+  //    effect can read it without a side effect inside a state updater.
+  //  - previewAbortRef lets us cancel an in-flight preview request when the
+  //    user clicks another room or switches unit.
+  const selectedRoomRef = useRef("");
+  const previewAbortRef = useRef(null);
+
+  useEffect(() => {
+    selectedRoomRef.current = selectedRoom;
+  }, [selectedRoom]);
+
   const getGlobalAttemptCount = () =>
     parseInt(sessionStorage.getItem("globalAttemptCount") || "0", 10);
 
@@ -1382,70 +1422,46 @@ const HomePage = () => {
   // Fetch the room list for this client + selected unit. Non-unit-aware
   // clients ignore flatType server-side and just return their fixed list.
   // If the currently selected room no longer exists in the new list (e.g.
-  // switching from 1BR to Studio drops "Master Bedroom"), clear it and
-  // reset the preview back to the "before" placeholder.
+  // switching from 1BR to Studio drops "Master Bedroom"), fall back to the
+  // first room in the list. The preview for the chosen room is loaded here,
+  // outside of any state updater, so it only fires once. Only the selected
+  // room's preview is fetched; other rooms load when clicked.
   useEffect(() => {
+    let cancelled = false;
+
     const loadRooms = async () => {
       try {
         const data = await getClientRooms(clientName, selectedFlatType);
+        if (cancelled) return;
         const nextRooms = data.success ? data.rooms || [] : [];
         setRooms(nextRooms);
-        setSelectedRoom((prevRoom) => {
-          const stillValid = prevRoom && nextRooms.some((r) => r.id === prevRoom);
-          if (stillValid) return prevRoom;
 
-          // No room selected yet (first load), or the previously selected
-          // room doesn't exist for the newly loaded unit — default to the
-          // first room in the list and load its preview, instead of
-          // leaving the right panel on the empty placeholder.
-          if (nextRooms.length > 0) {
-            loadRoomPreview(nextRooms[0].id, selectedFlatType);
-            return nextRooms[0].id;
-          }
+        const prev = selectedRoomRef.current;
+        const keep =
+          prev && nextRooms.some((r) => r.id === prev)
+            ? prev
+            : nextRooms[0]?.id || "";
+
+        setSelectedRoom(keep);
+        if (keep) {
+          loadRoomPreview(keep, selectedFlatType);
+        } else {
           setRoomPreviewImage(null);
           setShowBeforePreview(true);
-          return "";
-        });
+        }
       } catch (err) {
-        console.error("[APP] Failed to load rooms:", err);
-        setRooms([]);
+        if (!cancelled) {
+          console.error("[APP] Failed to load rooms:", err);
+          setRooms([]);
+        }
       }
     };
+
     loadRooms();
-  }, [clientName, selectedFlatType]);
-
-  // Preload preview images for every room in the current room list, keyed
-  // by client+unit+room so switching units never shows a stale image from
-  // a different unit while the correct one is still loading.
-  useEffect(() => {
-    if (!rooms || rooms.length === 0) return;
-
-    const preloadAllRooms = async () => {
-      const cache = {};
-      await Promise.all(
-        rooms.map(async (room) => {
-          try {
-            const url = new URL(
-              `https://interior-backend-production.up.railway.app/api/room-preview/${clientName}/${room.id}`,
-            );
-            if (selectedFlatType) {
-              url.searchParams.set("flat_type", selectedFlatType);
-            }
-            const res = await fetch(url.toString());
-            const data = await res.json();
-            if (data.success) {
-              cache[previewKey(room.id, selectedFlatType)] =
-                `data:image/png;base64,${data.image_base64}`;
-            }
-          } catch (err) {
-            console.error(`[APP] Failed to preload ${room.id}:`, err);
-          }
-        }),
-      );
-      setRoomPreviewCache((prev) => ({ ...prev, ...cache }));
+    return () => {
+      cancelled = true;
     };
-    preloadAllRooms();
-  }, [clientName, selectedFlatType, rooms]);
+  }, [clientName, selectedFlatType]);
 
   useEffect(() => {
     if (currentView === "default" && sessionId && !isRegistered)
@@ -1473,10 +1489,18 @@ const HomePage = () => {
   const loadRoomPreview = async (roomId, flatTypeOverride = selectedFlatType) => {
     setShowBeforePreview(true);
     const key = previewKey(roomId, flatTypeOverride);
+
     if (roomPreviewCache[key]) {
       setRoomPreviewImage(roomPreviewCache[key]);
+      setLoadingPreview(false);
       return;
     }
+
+    // Cancel any earlier preview request that is still in flight.
+    if (previewAbortRef.current) previewAbortRef.current.abort();
+    const controller = new AbortController();
+    previewAbortRef.current = controller;
+
     setLoadingPreview(true);
     setRoomPreviewImage(null);
     try {
@@ -1486,17 +1510,19 @@ const HomePage = () => {
       if (flatTypeOverride) {
         url.searchParams.set("flat_type", flatTypeOverride);
       }
-      const res = await fetch(url.toString());
+      const res = await fetch(url.toString(), { signal: controller.signal });
       const data = await res.json();
       if (data.success) {
-        const img = `data:image/png;base64,${data.image_base64}`;
+        // Backend now serves previews as JPEG (much smaller than PNG).
+        const img = `data:image/jpeg;base64,${data.image_base64}`;
         setRoomPreviewCache((prev) => ({ ...prev, [key]: img }));
         setRoomPreviewImage(img);
       }
     } catch (err) {
+      if (err.name === "AbortError") return;
       console.error("[APP] Failed to load room preview:", err);
     } finally {
-      setLoadingPreview(false);
+      if (previewAbortRef.current === controller) setLoadingPreview(false);
     }
   };
 
@@ -1694,7 +1720,7 @@ const HomePage = () => {
       setVirtualTourInitialMode("map");
       setVirtualTourInitialCategory("dining");
       setCurrentView("virtualTour");
-    } else if (tabId === "localWatch") {                              // ← ADD THIS BLOCK
+    } else if (tabId === "localWatch") {
       setCurrentView("localWatch");
     }
   };

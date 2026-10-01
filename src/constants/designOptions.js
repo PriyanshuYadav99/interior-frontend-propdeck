@@ -32,6 +32,7 @@ export const FLAT_TYPES = [
   { id: "villa", name: "Villa" },
   { id: "bungalow", name: "Bungalow" },
   { id: "rowhouse", name: "Row House" },
+  {}
 ];
 
 // Persistent top nav tabs — the only way the user switches between the
