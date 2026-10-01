@@ -109,6 +109,38 @@ const THEMES = {
   },
   // Add future clients here. Example:
   // "another-client": { btnBg: "#0F766E", pillBg: "#0F766E" },
+  "spring-field": {
+    fontFamily: '"Sora", sans-serif',
+
+    tabBg: "#24418F",
+    tabText: "#ffffff",
+
+    pillBg: "rgba(36, 65, 143, 0.3)",
+    pillBorder: "#24418F",
+    pillText: "#24418F",
+
+    btnBg: "#1A1A2E",
+    btnText: "#ffffff",
+
+    cardBg: "rgba(36, 65, 143, 0.1)",
+    cardBorder: "#24418F",
+    iconBg: "rgba(36, 65, 143, 0.25)",
+    iconColor: "#24418F",
+
+    detailBg: "#F5F7FA",
+    detailBorder: "#B8C4CE",
+
+    tagBg: "rgba(36, 65, 143, 0.1)",
+    tagBorder: "#24418F",
+    tagText: "#24418F",
+
+    catBg: "rgba(36, 65, 143, 0.2)",
+    catBorder: "#24418F",
+    catText: "#24418F",
+
+    ratingBg: "#24418F",
+    streetIcon: "#24418F",
+  },
 };
 
 export const getTheme = (clientName) => ({
