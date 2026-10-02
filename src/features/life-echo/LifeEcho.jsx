@@ -2,7 +2,6 @@ import React, { useState, useEffect } from "react";
 import {
   ChevronLeft,
   Sparkles,
-  X,
   Loader2,
   AlertCircle,
   Clock,
@@ -10,7 +9,6 @@ import {
   Shield,
   Home,
   Building,
-  Grid3x3,
 } from "lucide-react";
 import {
   logLifeEchoSelection,
@@ -18,18 +16,21 @@ import {
 } from "../../utils/activityTracker";
 import { API_BASE_URL } from "../../config/env";
 
-const generateScenario = async (text, clientName, flatType) => {
+// Sends client_name so the backend can localise the story and
+// (for fam / nakheel) return the client's own scenario cards.
+const generateScenario = async (text, clientName) => {
   const response = await fetch(`${API_BASE_URL}/api/scenario/generate`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ scenario_text: text, client_name: clientName, flat_type: flatType }),
+    body: JSON.stringify({ scenario_text: text, client_name: clientName }),
   });
   if (!response.ok) throw new Error("Failed to generate scenario");
   return await response.json();
 };
 
-const getRandomScenarios = async () => {
-  const response = await fetch(`${API_BASE_URL}/api/scenario/random`, {
+const getRandomScenarios = async (clientName) => {
+  const qs = clientName ? `?client_name=${encodeURIComponent(clientName)}` : "";
+  const response = await fetch(`${API_BASE_URL}/api/scenario/random${qs}`, {
     method: "GET",
     headers: { "Content-Type": "application/json" },
   });
@@ -71,7 +72,7 @@ const iconMap = {
 };
 
 // ------------------------------------------------------------
-// IMAGE GALLERY (the right-hand "yellow region")
+// IMAGE GALLERY (the right-hand photo region)
 // ------------------------------------------------------------
 const skeletonStyle = {
   background: "#e5e7eb",
@@ -159,6 +160,9 @@ const ImageGallery = ({ images, loading }) => {
   );
 };
 
+// Colours come from the CSS variables that HomePage sets on the outer card
+// (themeToCssVars). For clients with no custom theme they equal the old
+// gold/navy defaults, so nothing changes for them.
 const LifeEcho = ({
   onBack,
   isEmbedded = false,
@@ -176,15 +180,22 @@ const LifeEcho = ({
   const [totalBatches, setTotalBatches] = useState(1);
   const [isGenerating, setIsGenerating] = useState(false);
   const [isGeneratingMore, setIsGeneratingMore] = useState(false);
+  const [isLoadingInitial, setIsLoadingInitial] = useState(true);
   const [error, setError] = useState("");
 
   // photos for the opened scenario
   const [images, setImages] = useState([]);
   const [imagesLoading, setImagesLoading] = useState(false);
 
+  // (re)load the cards whenever the client changes
   useEffect(() => {
+    setScenarios([]);
+    setLoadedBatches(0);
+    setTotalBatches(1);
+    setSelectedScenario(null);
     loadInitialScenarios();
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [clientName]);
 
   useEffect(() => {
     if (initialScenario) setSelectedScenario(initialScenario);
@@ -230,16 +241,20 @@ const LifeEcho = ({
   }, [selectedScenario]);
 
   const loadInitialScenarios = async () => {
+    setIsLoadingInitial(true);
+    setError("");
     try {
-      const result = await getRandomScenarios();
+      const result = await getRandomScenarios(clientName);
       if (result.success && result.scenarios) {
         setScenarios(result.scenarios);
         setLoadedBatches(1);
-        if (result.total_batches) setTotalBatches(result.total_batches);
+        setTotalBatches(result.total_batches || 1);
         highlightRandomScenarios(result.scenarios);
       }
     } catch (err) {
       setError("Failed to load example scenarios");
+    } finally {
+      setIsLoadingInitial(false);
     }
   };
 
@@ -268,7 +283,7 @@ const LifeEcho = ({
     setIsGenerating(true);
     setError("");
     try {
-      const result = await generateScenario(scenarioText, clientName, flatType);
+      const result = await generateScenario(scenarioText, clientName);
       if (result.success) {
         const newScenario = {
           id: Date.now(),
@@ -287,7 +302,6 @@ const LifeEcho = ({
         logLifeEchoSelection({
           isCustom: true,
           customText: scenarioText,
-          flatType,
         });
 
         setScenarioText("");
@@ -312,7 +326,7 @@ const LifeEcho = ({
     setIsGeneratingMore(true);
     setError("");
     try {
-      const result = await getRandomScenarios();
+      const result = await getRandomScenarios(clientName);
       if (result.success && result.scenarios) {
         setScenarios((prev) => {
           const existing = new Set(prev.map((s) => s.id));
@@ -360,6 +374,9 @@ const LifeEcho = ({
         .trim();
     return null;
   };
+
+  // "Generate More" is pointless when there is only one batch (fam / nakheel)
+  const showGenerateMore = totalBatches > 1;
 
   return (
     <div
@@ -487,10 +504,31 @@ const LifeEcho = ({
                 }}
               >
                 <Loader2
-                  size={18}
-                  style={{ animation: "spin 1s linear infinite", flexShrink: 0 }}
+                  size={15}
+                  style={{ animation: "spin 1s linear infinite" }}
                 />
                 Generating your custom scenario...
+              </div>
+            )}
+
+            {/* LOADING CARDS (first load can take a few seconds for fam / nakheel) */}
+            {isLoadingInitial && scenarios.length === 0 && (
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "0.5rem",
+                  padding: "1.5rem",
+                  color: "#6b7280",
+                  fontSize: "0.85rem",
+                }}
+              >
+                <Loader2
+                  size={16}
+                  color="var(--c-accent)"
+                  style={{ animation: "spin 1s linear infinite" }}
+                />
+                Loading scenarios...
               </div>
             )}
 
@@ -514,7 +552,7 @@ const LifeEcho = ({
                       onMouseEnter={() =>
                         getScenarioImages(
                           scenario.title,
-                          scenario.description || "",
+                          scenario.promptText || scenario.description || "",
                         ).catch(() => {})
                       }
                       onClick={() => {
@@ -525,7 +563,6 @@ const LifeEcho = ({
                           scenarioId: scenario.id,
                           scenarioTitle: scenario.title,
                           scenarioIcon: scenario.icon || "clock",
-                          flatType,
                         });
                       }}
                       style={{
@@ -546,7 +583,7 @@ const LifeEcho = ({
                         textAlign: "left",
                         boxSizing: "border-box",
                         boxShadow: isHighlighted
-                          ? "0 4px 12px rgba(201,162,83,0.25)"
+                          ? "0 4px 12px rgba(0,0,0,0.12)"
                           : "0 1px 3px rgba(0,0,0,0.06)",
                       }}
                     >
@@ -556,13 +593,14 @@ const LifeEcho = ({
                           height: "32px",
                           borderRadius: "50%",
                           background: "var(--c-icon-bg)",
+                          color: "var(--c-icon-color)",
                           display: "flex",
                           alignItems: "center",
                           justifyContent: "center",
                           flexShrink: 0,
                         }}
                       >
-                        <Icon size={16} style={{ color: "var(--c-icon-color)" }} />
+                        <Icon size={16} color="currentColor" />
                       </div>
                       <span>{scenario.title}</span>
                     </button>
@@ -571,70 +609,71 @@ const LifeEcho = ({
               </div>
             )}
 
-            {/* GENERATE MORE */}
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "center",
-                alignItems: "center",
-                padding: "1.5rem",
-                marginTop: "auto",
-                flexShrink: 0,
-              }}
-            >
-              <button
-                onClick={handleGenerateMoreScenarios}
-                disabled={isGeneratingMore || isGenerating}
+            {/* GENERATE MORE (hidden for single-batch clients like fam / nakheel) */}
+            {showGenerateMore && (
+              <div
                 style={{
-                  display: "inline-flex",
-                  alignItems: "center",
+                  display: "flex",
                   justifyContent: "center",
-                  gap: "10px",
-                  minWidth: "157px",
-                  whiteSpace: "nowrap",
-                  height: "41px",
-                  padding: "10px",
-                  fontSize: "1rem",
-                  fontWeight: "540",
-                  color: "var(--c-btn-text)",
-                  background:
-                    isGeneratingMore || isGenerating
-                      ? "#9ca3af"
-                      : "var(--c-btn-bg)",
-                  border: "none",
-                  borderRadius: "8px",
-                  cursor:
-                    isGeneratingMore || isGenerating
-                      ? "not-allowed"
-                      : "pointer",
-                  boxSizing: "border-box",
-                  boxShadow:
-                    isGeneratingMore || isGenerating
-                      ? "none"
-                      : "4px 4px 10px 0px rgba(0,0,0,0.15)",
+                  alignItems: "center",
+                  padding: "1.5rem",
+                  marginTop: "auto",
+                  flexShrink: 0,
                 }}
               >
-                {isGeneratingMore ? (
-                  <>
-                    <Loader2
-                      size={18}
-                      style={{ animation: "spin 1s linear infinite", flexShrink: 0 }}
-                    />
-                    Loading...
-                  </>
-                ) : loadedBatches >= totalBatches ? (
-                  <>
-                    <Sparkles size={18} style={{ flexShrink: 0 }} />
-                    Start Over
-                  </>
-                ) : (
-                  <>
-                    <Sparkles size={18} style={{ flexShrink: 0 }} />
-                    Generate More
-                  </>
-                )}
-              </button>
-            </div>
+                <button
+                  onClick={handleGenerateMoreScenarios}
+                  disabled={isGeneratingMore || isGenerating}
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: "10px",
+                    width: "157px",
+                    height: "41px",
+                    padding: "10px",
+                    fontSize: "1rem",
+                    fontWeight: "540",
+                    color: "var(--c-btn-text)",
+                    background:
+                      isGeneratingMore || isGenerating
+                        ? "#9ca3af"
+                        : "var(--c-btn-bg)",
+                    border: "none",
+                    borderRadius: "8px",
+                    cursor:
+                      isGeneratingMore || isGenerating
+                        ? "not-allowed"
+                        : "pointer",
+                    boxSizing: "border-box",
+                    boxShadow:
+                      isGeneratingMore || isGenerating
+                        ? "none"
+                        : "4px 4px 10px 0px rgba(0,0,0,0.15)",
+                  }}
+                >
+                  {isGeneratingMore ? (
+                    <>
+                      <Loader2
+                        size={18}
+                        style={{ animation: "spin 1s linear infinite" }}
+                      />
+                      Loading...
+                    </>
+                  ) : loadedBatches >= totalBatches ? (
+                    <>
+                      <Sparkles size={18} />
+                      Start Over
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles size={18} />
+                      Generate More
+                    </>
+                  )}
+                </button>
+              </div>
+            )}
           </div>
         )}
 
@@ -774,7 +813,7 @@ const LifeEcho = ({
                   )}
                 </div>
 
-                {/* RIGHT: photos (the yellow region) */}
+                {/* RIGHT: photos */}
                 {(imagesLoading || images.length > 0) && (
                   <div
                     style={{
