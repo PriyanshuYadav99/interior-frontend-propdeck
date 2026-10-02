@@ -324,6 +324,7 @@ const RegistrationModal = ({
                 <option value="GB">GB</option>
                 <option value="CA">CA</option>
                 <option value="AU">AU</option>
+                <option value="AE">AE</option>
               </select>
               <ChevronDown
                 size={16}
