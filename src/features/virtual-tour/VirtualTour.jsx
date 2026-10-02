@@ -604,8 +604,8 @@ const VirtualTour = ({
               onClick={() => handleCategoryChange(cat.id)}
               disabled={loading}
               style={{
-                padding: "0.45rem 0.9rem",
-                borderRadius: "20px",
+                padding: "0.5rem 1rem",
+                borderRadius: "13px",
                 border:
                   selectedCategory === cat.id
                     ? "1.5px solid var(--c-cat-border)"
@@ -896,7 +896,7 @@ const VirtualTour = ({
                       }}
                       title="View on map"
                     >
-                      <MapPin size={24} color="#16223B" strokeWidth={2} />
+                      <MapPin size={35} color="#16223B" strokeWidth={2} />
                     </button>
                     <button
                       onClick={(e) => {
@@ -904,8 +904,8 @@ const VirtualTour = ({
                         handleStreetViewClick(place);
                       }}
                       style={{
-                        width: "32px",
-                        height: "32px",
+                        width: "40px",
+                        height: "40px",
                         border: "none",
                         background: "transparent",
                         display: "flex",
@@ -917,8 +917,8 @@ const VirtualTour = ({
                       title="Street View"
                     >
                       <svg
-                        width="24"
-                        height="24"
+                        width="50"
+                        height="50"
                         viewBox="0 0 24 24"
                         xmlns="http://www.w3.org/2000/svg"
                         style={{ fill: "var(--c-street-icon)" }}
