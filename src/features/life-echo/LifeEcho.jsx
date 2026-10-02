@@ -551,7 +551,7 @@ const LifeEcho = ({
                       // prefetch photos on hover so they are ready on click
                       onMouseEnter={() =>
                         getScenarioImages(
-                          scenario.title,
+                          scenario.promptText || scenario.title,
                           scenario.promptText || scenario.description || "",
                         ).catch(() => {})
                       }
