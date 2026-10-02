@@ -42,4 +42,5 @@ export const NAV_TABS = [
   { id: "scenario", label: "Living insight" },
   { id: "virtualTour", label: "Explore nearby" },
   { id: "localWatch", label: "Local watch" },
+  { id: "amenities", label: "Amenities" },   // add
 ];
