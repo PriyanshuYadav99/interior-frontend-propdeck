@@ -101,6 +101,7 @@ export const logVirtualTourSelection = async (
   photoUrl,
   distance,
   rating,
+  flatType = null,
 ) => {
   if (!placeId) {
     console.warn("[Tracker] Skipping VT log — no placeId");
@@ -117,6 +118,7 @@ export const logVirtualTourSelection = async (
       vt_photo_url: photoUrl || null,
       vt_distance: distance || null,
       vt_rating: rating || null,
+      flat_type: flatType || null,
     };
     const userId = getUserId();
     if (userId) body.user_id = userId;
@@ -138,6 +140,7 @@ export const logLifeEchoSelection = async ({
   scenarioTitle = "",
   scenarioIcon = "clock",
   customText = "",
+  flatType = null,
 }) => {
   try {
     const body = {
@@ -153,6 +156,7 @@ export const logLifeEchoSelection = async ({
       body.lifeecho_scenario_title = scenarioTitle;
       body.lifeecho_scenario_icon = scenarioIcon;
     }
+    if (flatType) body.flat_type = flatType;
     const userId = getUserId();
     if (userId) body.user_id = userId;
     await fetch(`${BACKEND_URL}/api/activity/selection`, {
