@@ -178,6 +178,44 @@ const THEMES = {
   streetIcon: "#C9A253",    // street view icon
   marker: "#16223B", 
   },
+
+  "home-and-rentals": {
+    fontFamily: '"Sora", sans-serif',
+
+    pageBg: "#F8F5EF",        // outer card + list panel background
+
+  tabBg: "#007BFF",         // active top tab background
+  tabText: "#ffffff",       // active top tab text
+
+  pillBg: "#CCE5FF",        // active unit / room / style pill background
+  pillBorder: "#007BFF",    // active pill border colour
+  pillText: "#007BFF",      // active pill text + icon
+
+  btnBg: "#007BFF",         // Generate Design + Generate More buttons
+  btnText: "#ffffff",
+
+  accent: "#9333ea",        // spinners + custom prompt border
+
+  cardBg: "#CCE5FF",        // Living insight scenario cards
+  cardBorder: "#007BFF",
+  iconBg: "#007BFF",        // circle behind the scenario icon
+  iconColor: "#ffffff",
+
+  detailBg: "#F5F7FA",      // opened scenario panel
+  detailBorder: "#e2e8f0",
+
+  tagBg: "#CCE5FF",         // quote / tagline box
+  tagBorder: "#007BFF",
+  tagText: "#007BFF",
+
+  catBg: "#CCE5FF",         // Explore nearby active category pill
+  catBorder: "#007BFF",
+  catText: "#007BFF",
+
+  ratingBg: "#007BFF",      // star rating pill
+  streetIcon: "#007BFF",    // street view icon
+  marker: "#16223B", 
+  },
 };
 
 export const getTheme = (clientName) => ({

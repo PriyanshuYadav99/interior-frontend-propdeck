@@ -38,7 +38,7 @@ export const FLAT_TYPES = [
 // Persistent top nav tabs — the only way the user switches between the
 // three main tools (room design / living insight / explore nearby).
 export const NAV_TABS = [
-  { id: "default", label: "Room design" },
+  { id: "default", label: "Dream space" },
   { id: "scenario", label: "Living insight" },
   { id: "virtualTour", label: "Explore nearby" },
   { id: "localWatch", label: "Local watch" },

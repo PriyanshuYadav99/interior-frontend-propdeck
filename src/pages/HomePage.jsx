@@ -703,14 +703,24 @@ const HomePage = () => {
               }}
             >
               <div
+              style={{
+                background: "white",
+                borderRadius: "16px",
+                padding: "1rem",
+                boxSizing: "border-box",
+                overflow: "auto",
+              }}
+            >
+              <h2
                 style={{
-                  background: "white",
-                  borderRadius: "16px",
-                  padding: "1rem",
-                  boxSizing: "border-box",
-                  overflow: "auto",
+                  fontSize: "1.1rem",
+                  fontWeight: "700",
+                  color: "#1f2937",
+                  margin: "0 0 0.9rem 0",
                 }}
               >
+                Design your dream space
+              </h2>
                 {/* FLAT TYPE — only shown for clients that have active units
                     configured in property_sections (e.g. the-wow-tower).
                     Clients with none (empty flatTypes) skip this row
@@ -807,7 +817,7 @@ const HomePage = () => {
                     style={{
                       display: "flex",
                       flexWrap: "wrap",
-                      gap: "1rem",
+                      gap: "0.5rem",
                       flex: 1,
                       minWidth: 0,
                     }}
