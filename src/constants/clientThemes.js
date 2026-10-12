@@ -14,8 +14,12 @@ const DEFAULT_THEME = {
   pillBorder: "#C9A253",    // active pill border colour
   pillText: "#ffffff",      // active pill text + icon
 
-  btnBg: "#101C34",         // Generate Design + Generate More buttons
+  btnBg: "#101C34",         // Generate Design 
   btnText: "#ffffff",
+
+  moreBtnBg: "#101C34",     // Generate More
+  moreBtnText: "#ffffff",
+
 
   accent: "#9333ea",        // spinners + custom prompt border
 
@@ -214,6 +218,46 @@ const THEMES = {
 
   ratingBg: "#007BFF",      // star rating pill
   streetIcon: "#007BFF",    // street view icon
+  marker: "#16223B", 
+  },
+  "shahrukhz": {
+    fontFamily: '"Sora", sans-serif',
+
+    pageBg: "#F8F5EF",        // outer card + list panel background
+
+  tabBg: "#0C1824",         // active top tab background
+  tabText: "#ffffff",       // active top tab text
+
+  pillBg: "#E6A45233",        // active unit / room / style pill background
+  pillBorder: "#E6A452",    // active pill border colour
+  pillText: "#E6A452",      // active pill text + icon
+
+  btnBg: "#0C1824",         // Generate Design 
+  btnText: "#ffffff",
+
+  moreBtnBg: "#006280",     // Generate More
+  moreBtnText: "#ffffff",
+
+  accent: "#9333ea",        // spinners + custom prompt border
+
+  cardBg: "#E6A4521A",        // Living insight scenario cards
+  cardBorder: "#E6A452",
+  iconBg: "#E6A45233",        // circle behind the scenario icon
+  iconColor: "#E6A452",
+
+  detailBg: "#F5F7FA",      // opened scenario panel
+  detailBorder: "#e2e8f0",
+
+  tagBg: "#E6A4521A",         // quote / tagline box
+  tagBorder: "#E6A452",
+  tagText: "#E6A452",
+
+  catBg: "#E6A45233",         // Explore nearby active category pill
+  catBorder: "#E6A452",
+  catText: "#E6A452",
+
+  ratingBg: "#E6A452",      // star rating pill
+  streetIcon: "#E6A452",    // street view icon
   marker: "#16223B", 
   },
 };

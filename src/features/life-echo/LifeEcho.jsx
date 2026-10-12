@@ -633,11 +633,11 @@ const LifeEcho = ({
                     fontSize: "0.95rem",
                     whiteSpace: "nowrap",
                     fontWeight: "540",
-                    color: "var(--c-btn-text)",
+                    color: "var(--c-more-btn-text, var(--c-btn-text))",
                     background:
                       isGeneratingMore || isGenerating
                         ? "#9ca3af"
-                        : "var(--c-btn-bg)",
+                        : "var(--c-more-btn-bg, var(--c-btn-bg))",
                     border: "none",
                     borderRadius: "8px",
                     cursor:
