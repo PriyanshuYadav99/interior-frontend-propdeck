@@ -9,9 +9,14 @@ import {
   Shield,
   Home,
   Building,
-  Plane,        // new
+  Plane,
   TrainFront,
+  Baby,     // new: child
+  Trees,    // new: park
+  Waves,    // new: scuba
 } from "lucide-react";
+  
+
 import {
   logLifeEchoSelection,
   logToolUsage,
@@ -71,8 +76,11 @@ const iconMap = {
   shield: Shield,
   home: Home,
   building: Building,
-  plane: Plane,        // new
-  metro: TrainFront, 
+  plane: Plane,
+  metro: TrainFront,
+  child: Baby,      // new
+  park: Trees,      // new
+  scuba: Waves,     // new
 };
 
 // ------------------------------------------------------------
