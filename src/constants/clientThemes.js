@@ -235,7 +235,7 @@ const THEMES = {
   btnBg: "#0C1824",         // Generate Design 
   btnText: "#ffffff",
 
-  moreBtnBg: "#006280",     // Generate More
+  moreBtnBg: "#0C1824",     // Generate More
   moreBtnText: "#ffffff",
 
   accent: "#9333ea",        // spinners + custom prompt border
