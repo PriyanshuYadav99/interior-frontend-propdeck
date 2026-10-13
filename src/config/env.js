@@ -12,4 +12,4 @@ export const API_BASE_URL =
   
 export const GOOGLE_MAPS_API_KEY =
   import.meta.env.VITE_GOOGLE_MAPS_API_KEY ||
-  "AIzaSyAfDoI98BjfukXxFsnXB8qQJPK_0Bi7ntI";
+  "AIzaSyAg8g1uCruqLIWRrXhjTBCKP-1a7qif5_k";
