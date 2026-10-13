@@ -9,6 +9,8 @@ import {
   Shield,
   Home,
   Building,
+  Plane,        // new
+  TrainFront,
 } from "lucide-react";
 import {
   logLifeEchoSelection,
@@ -69,6 +71,8 @@ const iconMap = {
   shield: Shield,
   home: Home,
   building: Building,
+  plane: Plane,        // new
+  metro: TrainFront, 
 };
 
 // ------------------------------------------------------------
