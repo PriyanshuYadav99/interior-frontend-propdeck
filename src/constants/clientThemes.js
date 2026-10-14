@@ -14,12 +14,8 @@ const DEFAULT_THEME = {
   pillBorder: "#C9A253",    // active pill border colour
   pillText: "#ffffff",      // active pill text + icon
 
-  btnBg: "#101C34",         // Generate Design 
+  btnBg: "#101C34",         // Generate Design + Generate More buttons
   btnText: "#ffffff",
-
-  moreBtnBg: "#101C34",     // Generate More
-  moreBtnText: "#ffffff",
-
 
   accent: "#9333ea",        // spinners + custom prompt border
 
@@ -79,6 +75,7 @@ const THEMES = {
     ratingBg: "#E8BE62",
     streetIcon: "#E1A035",
   },
+
   "nakheel": {
     fontFamily: '"Sora", sans-serif',
 
@@ -111,8 +108,10 @@ const THEMES = {
     ratingBg: "#006280",
     streetIcon: "#2B5C8A",
   },
+
   // Add future clients here. Example:
   // "another-client": { btnBg: "#0F766E", pillBg: "#0F766E" },
+
   "spring-field": {
     fontFamily: '"Sora", sans-serif',
 
@@ -145,120 +144,163 @@ const THEMES = {
     ratingBg: "#24418F",
     streetIcon: "#24418F",
   },
+
   "fam": {
     fontFamily: '"Sora", sans-serif',
 
-    pageBg: "#F8F5EF",        // outer card + list panel background
+    pageBg: "#F8F5EF",
 
-  tabBg: "#101C34",         // active top tab background
-  tabText: "#ffffff",       // active top tab text
+    tabBg: "#101C34",
+    tabText: "#ffffff",
 
-  pillBg: "#C9A253",        // active unit / room / style pill background
-  pillBorder: "#C9A253",    // active pill border colour
-  pillText: "#ffffff",      // active pill text + icon
+    pillBg: "#C9A253",
+    pillBorder: "#C9A253",
+    pillText: "#ffffff",
 
-  btnBg: "#101C34",         // Generate Design + Generate More buttons
-  btnText: "#ffffff",
+    btnBg: "#101C34",
+    btnText: "#ffffff",
 
-  accent: "#9333ea",        // spinners + custom prompt border
+    accent: "#9333ea",
 
-  cardBg: "#F4F6F9",        // Living insight scenario cards
-  cardBorder: "#C9A253",
-  iconBg: "#C9A253",        // circle behind the scenario icon
-  iconColor: "#ffffff",
+    cardBg: "#F4F6F9",
+    cardBorder: "#C9A253",
+    iconBg: "#C9A253",
+    iconColor: "#ffffff",
 
-  detailBg: "#F5F7FA",      // opened scenario panel
-  detailBorder: "#e2e8f0",
+    detailBg: "#F5F7FA",
+    detailBorder: "#e2e8f0",
 
-  tagBg: "#F5EEDC",         // quote / tagline box
-  tagBorder: "#C9A253",
-  tagText: "#8D6B2E",
+    tagBg: "#F5EEDC",
+    tagBorder: "#C9A253",
+    tagText: "#8D6B2E",
 
-  catBg: "#C9A253",         // Explore nearby active category pill
-  catBorder: "#d1d5db",
-  catText: "#ffffff",
+    catBg: "#C9A253",
+    catBorder: "#d1d5db",
+    catText: "#ffffff",
 
-  ratingBg: "#C9A253",      // star rating pill
-  streetIcon: "#C9A253",    // street view icon
-  marker: "#16223B", 
+    ratingBg: "#C9A253",
+    streetIcon: "#C9A253",
+    marker: "#16223B",
   },
 
   "home-and-rentals": {
     fontFamily: '"Sora", sans-serif',
 
-    pageBg: "#F8F5EF",        // outer card + list panel background
+    pageBg: "#F8F5EF",
 
-  tabBg: "#007BFF",         // active top tab background
-  tabText: "#ffffff",       // active top tab text
+    tabBg: "#0C1824",
+    tabText: "#ffffff",
 
-  pillBg: "#CCE5FF",        // active unit / room / style pill background
-  pillBorder: "#007BFF",    // active pill border colour
-  pillText: "#007BFF",      // active pill text + icon
+    pillBg: "#E6A45233",
+    pillBorder: "#E6A452",
+    pillText: "#E6A452",
 
-  btnBg: "#007BFF",         // Generate Design + Generate More buttons
-  btnText: "#ffffff",
+    btnBg: "#007BFF",
+    btnText: "#ffffff",
 
-  accent: "#9333ea",        // spinners + custom prompt border
+    accent: "#9333ea",
 
-  cardBg: "#CCE5FF",        // Living insight scenario cards
-  cardBorder: "#007BFF",
-  iconBg: "#007BFF",        // circle behind the scenario icon
-  iconColor: "#ffffff",
+    cardBg: "#CCE5FF",
+    cardBorder: "#007BFF",
+    iconBg: "#007BFF",
+    iconColor: "#ffffff",
 
-  detailBg: "#F5F7FA",      // opened scenario panel
-  detailBorder: "#e2e8f0",
+    detailBg: "#F5F7FA",
+    detailBorder: "#e2e8f0",
 
-  tagBg: "#CCE5FF",         // quote / tagline box
-  tagBorder: "#007BFF",
-  tagText: "#007BFF",
+    tagBg: "#CCE5FF",
+    tagBorder: "#007BFF",
+    tagText: "#007BFF",
 
-  catBg: "#CCE5FF",         // Explore nearby active category pill
-  catBorder: "#007BFF",
-  catText: "#007BFF",
+    catBg: "#CCE5FF",
+    catBorder: "#007BFF",
+    catText: "#007BFF",
 
-  ratingBg: "#007BFF",      // star rating pill
-  streetIcon: "#007BFF",    // street view icon
-  marker: "#16223B", 
+    ratingBg: "#007BFF",
+    streetIcon: "#007BFF",
+    marker: "#16223B",
   },
+
   "shahrukhz": {
     fontFamily: '"Sora", sans-serif',
 
     pageBg: "#F8F5EF",        // outer card + list panel background
 
-  tabBg: "#0C1824",         // active top tab background
-  tabText: "#ffffff",       // active top tab text
+    tabBg: "#0C1824",         // active top tab background
+    tabText: "#ffffff",       // active top tab text
 
-  pillBg: "#E6A45233",        // active unit / room / style pill background
-  pillBorder: "#E6A452",    // active pill border colour
-  pillText: "#E6A452",      // active pill text + icon
+    pillBg: "#E6A45233",      // active unit / room / style pill background
+    pillBorder: "#E6A452",    // active pill border colour
+    pillText: "#E6A452",      // active pill text + icon
 
-  btnBg: "#0C1824",         // Generate Design 
-  btnText: "#ffffff",
+    btnBg: "#0C1824",         // Generate Design
+    btnText: "#ffffff",
 
-  moreBtnBg: "#0C1824",     // Generate More
-  moreBtnText: "#ffffff",
+    moreBtnBg: "#0C1824",     // Generate More
+    moreBtnText: "#ffffff",
 
-  accent: "#9333ea",        // spinners + custom prompt border
+    accent: "#9333ea",        // spinners + custom prompt border
 
-  cardBg: "#E6A4521A",        // Living insight scenario cards
-  cardBorder: "#E6A452",
-  iconBg: "#E6A45233",        // circle behind the scenario icon
-  iconColor: "#E6A452",
+    cardBg: "#E6A4521A",      // Living insight scenario cards
+    cardBorder: "#E6A452",
+    iconBg: "#E6A45233",      // circle behind the scenario icon
+    iconColor: "#E6A452",
 
-  detailBg: "#F5F7FA",      // opened scenario panel
-  detailBorder: "#e2e8f0",
+    detailBg: "#F5F7FA",      // opened scenario panel
+    detailBorder: "#e2e8f0",
 
-  tagBg: "#E6A4521A",         // quote / tagline box
-  tagBorder: "#E6A452",
-  tagText: "#E6A452",
+    tagBg: "#E6A4521A",       // quote / tagline box
+    tagBorder: "#E6A452",
+    tagText: "#E6A452",
 
-  catBg: "#E6A45233",         // Explore nearby active category pill
-  catBorder: "#E6A452",
-  catText: "#E6A452",
+    catBg: "#E6A45233",       // Explore nearby active category pill
+    catBorder: "#E6A452",
+    catText: "#E6A452",
 
-  ratingBg: "#E6A452",      // star rating pill
-  streetIcon: "#E6A452",    // street view icon
-  marker: "#16223B", 
+    ratingBg: "#E6A452",      // star rating pill
+    streetIcon: "#E6A452",    // street view icon
+    marker: "#16223B",        // Google Maps markers
+  },
+
+  "samana": {
+    fontFamily: '"Sora", sans-serif',
+
+    pageBg: "#F8F5EF",        // outer card + list panel background
+
+    tabBg: "#212529",         // active top tab background
+    tabText: "#ffffff",       // active top tab text
+
+    pillBg: "#CFBA8233",      // active unit / room / style pill background
+    pillBorder: "#CFBA82",    // active pill border colour
+    pillText: "#CFBA82",      // active pill text + icon
+
+    btnBg: "#212529",         // Generate Design
+    btnText: "#ffffff",
+
+    moreBtnBg: "#212529",     // Generate More
+    moreBtnText: "#ffffff",
+
+    accent: "#9333ea",        // spinners + custom prompt border
+
+    cardBg: "#CFBA821A",      // Living insight scenario cards
+    cardBorder: "#CFBA82",
+    iconBg: "#CFBA8233",      // circle behind the scenario icon
+    iconColor: "#CFBA82",
+
+    detailBg: "#F5F7FA",      // opened scenario panel
+    detailBorder: "#e2e8f0",
+
+    tagBg: "#CFBA821A",       // quote / tagline box
+    tagBorder: "#CFBA82",
+    tagText: "#CFBA82",
+
+    catBg: "#CFBA8233",       // Explore nearby active category pill
+    catBorder: "#CFBA82",
+    catText: "#CFBA82",
+
+    ratingBg: "#CFBA82",      // star rating pill
+    streetIcon: "#CFBA82",    // street view icon
+    marker: "#16223B",        // Google Maps markers
   },
 };
 
