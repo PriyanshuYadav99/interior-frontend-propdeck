@@ -302,6 +302,46 @@ const THEMES = {
     streetIcon: "#CFBA82",    // street view icon
     marker: "#16223B",        // Google Maps markers
   },
+  "damac": {
+    fontFamily: '"Sora", sans-serif',
+
+    pageBg: "#F8F5EF",        // outer card + list panel background
+
+    tabBg: "#000000",         // active top tab background
+    tabText: "#ffffff",       // active top tab text
+
+    pillBg: "#80808033",      // active unit / room / style pill background
+    pillBorder: "#808080",    // active pill border colour
+    pillText: "#808080",      // active pill text + icon
+
+    btnBg: "#000000",         // Generate Design
+    btnText: "#ffffff",
+
+    moreBtnBg: "#000000",     // Generate More
+    moreBtnText: "#ffffff",
+
+    accent: "#9333ea",        // spinners + custom prompt border
+
+    cardBg: "#8080801A",      // Living insight scenario cards
+    cardBorder: "#808080",
+    iconBg: "#80808033",      // circle behind the scenario icon
+    iconColor: "#808080",
+
+    detailBg: "#F5F7FA",      // opened scenario panel
+    detailBorder: "#e2e8f0",
+
+    tagBg: "#8080801A",       // quote / tagline box
+    tagBorder: "#808080",
+    tagText: "#808080",
+
+    catBg: "#80808033",       // Explore nearby active category pill
+    catBorder: "#808080",
+    catText: "#808080",
+
+    ratingBg: "#808080",      // star rating pill
+    streetIcon: "#808080",    // street view icon
+    marker: "#16223B",        // Google Maps markers
+  },
 };
 
 export const getTheme = (clientName) => ({
